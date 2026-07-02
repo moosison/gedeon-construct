@@ -53,7 +53,7 @@ Mark deliberate simplifications with a `lean:` comment in the note field naming 
 Surface the YAGNI verdict table and a grouped summary:
 - DELETE candidates (steps to remove from the plan before execute)
 - SIMPLIFY candidates (steps to reduce in scope before execute)
-- Overall lean score: **LEAN** (0–1 findings) / **TRIM** (2–4) / **OVERBUILT** (5+)
+- Overall lean score is a rate, not a raw count: findings ÷ total steps. **LEAN** (<15%) / **TRIM** (15–40%) / **OVERBUILT** (>40%). Report both the rate and the raw finding count.
 - Estimated step reduction as a percentage
 
 ### Step 4: Propose Changes
@@ -65,5 +65,6 @@ List the minimal edits to the plan file. If DELETE candidates exist, offer to re
 - Never flag security controls, trust-boundary validation, error handling that prevents data loss, or accessibility basics — these are never lean targets.
 - Never flag a step explicitly present in the acceptance criteria.
 - Never flag a step the user explicitly requested in the current session.
+- A step exempted by the two rules above (acceptance criteria or user-explicit) that would otherwise fail the ladder renders as **PASS** with note `(exempted — user-requested, ladder bypassed)`, and is excluded from the estimated step-reduction percentage — exemptions are not savings.
 - A step that passes all 7 rungs is PASS — no manufactured findings.
 - This skill governs what to build, not how to build it. Pair with gc-review for correctness.

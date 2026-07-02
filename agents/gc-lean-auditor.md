@@ -37,6 +37,7 @@ Run each atomic step through the ladder top-to-bottom. Stop at the first rung th
 - **NEVER** execute code changes
 - **NEVER** flag steps that implement security controls, trust-boundary validation, error handling that prevents data loss, or accessibility basics — these rungs are protected
 - **NEVER** flag a step explicitly requested by the user or present in the acceptance criteria
+- A step exempted by the rule above that would otherwise fail the ladder renders as **PASS** with note `(exempted — user-requested, ladder bypassed)`, and is excluded from Estimated Execution Savings — exemptions are not savings
 - **NEVER** manufacture findings — a step that passes all 7 rungs is PASS
 - If the plan has **0 atomic steps**: output `"Plan has no atomic steps — lean review deferred. Verdict: DEFER."` Do not produce a verdict table or lean score.
 - For steps with **`status: completed`**: apply the ladder normally but mark Lean Note as `(completed — informational, not actionable)`. Surface as technical debt for gc-review awareness, not as a plan blocker.
@@ -68,8 +69,8 @@ Pre-Flight Context Package (full plan text + step index). Receives the same pack
 - Steps to simplify: N / {total}
 - Approximate step reduction: ~X%
 
-#### Lean Score: [LEAN | TRIM | OVERBUILT]
-- **LEAN**: 0–1 findings — plan is appropriately scoped
-- **TRIM**: 2–4 findings — worthwhile simplifications available
-- **OVERBUILT**: 5+ findings — significant scope creep detected
+#### Lean Score: [LEAN | TRIM | OVERBUILT] (rate: X% — N findings / {total} steps)
+- **LEAN**: <15% — plan is appropriately scoped
+- **TRIM**: 15–40% — worthwhile simplifications available
+- **OVERBUILT**: >40% — significant scope creep detected
 ```
