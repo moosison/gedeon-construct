@@ -11,6 +11,7 @@ model: sonnet
 // 2. [Gotcha]: Parse ## Error Counts section only — stop at the next ## to avoid reading dated session entries.
 // 3. [Constraint]: If ## Error Counts section absent from STATE.md, proceed silently (no error).
 // 4. [Pattern]: Step 0 registration: read→merge→write for index.json. DELETE humanStatus from merged entry (session is active). Set name from config.json name field (fallback: slug). Preserve all other existing fields.
+// 5. [Pattern]: Step 0b scope classifier: Exploratory intent → Full → proceed to Step 1. Everything else (bounded, no intent stated) → Lite → propose gc-plan and stop. Never skip Step 0 — it is the mandatory lite tier. Step 0b runs after all Step 0 sub-items complete.
 
 # Architect Bootstrap
 
@@ -22,7 +23,7 @@ model: sonnet
 
 ## Execution Steps
 
-### Step 0: Global Memory + Project Registration
+### Step 0: Session Registration (Bootstrap Lite — always runs)
 
 Before scanning, read cross-project context:
 
@@ -38,6 +39,17 @@ Before scanning, read cross-project context:
    > Note: index.json is not concurrency-safe — concurrent sessions may lose one registration. Accepted limitation.
 
 3. **Read Codebase Patterns:** Read `.construct/STATE.md` and extract the `## Codebase Patterns` section. If non-empty, include under "Prior Session Patterns" in the situational brief.
+
+### Step 0b: Scope Assessment
+
+**Prerequisite:** Confirm Step 0 sub-item 2 (index.json write-back and humanStatus-DELETE) is complete before evaluating this table.
+
+After all Step 0 sub-items complete, classify the user's stated intent:
+
+| Signal | Scope | Action |
+| --- | --- | --- |
+| Exploratory: new feature, unknown area, cross-cutting change, investigation | **Full** | Output "Session registered. Full scope — continuing with workspace scan." Proceed to Step 1. |
+| Everything else (bounded scope, known area, resuming known work, no intent stated) | **Lite** (default) | Output "Session registered. Lite scope — proceeding to /gc-plan." Propose `/gc-plan` and stop. |
 
 ### Step 1: Bootstrap Context Brief
 

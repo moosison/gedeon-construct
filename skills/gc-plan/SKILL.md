@@ -15,17 +15,32 @@ model: opus
 // 3. [Pattern]: Bootstrap reuse: detect ## Bootstrap Context Brief: heading; sufficient = file list + tech stack.
 // 4. [Pattern]: gc-pipeline.json write includes "slug" field derived from feature-slug used in the Design Brief (available from user's invocation request).
 // 5. [Gotcha]: gc-resume's artifact ladder matches '{slug}.plan.md' for the "plan written, no preflight" state — if the plan filename convention changes, update gc-resume Step 2's artifact ladder.
+// 6. [Pattern]: Pipeline State Gate reads .claude/gc-pipeline.json BEFORE the create-plan stage write. Gate: absent/corrupt→STOP, eop→WARN+confirm, bootstrap/create-plan→proceed, pre-flight/execute/review→WARN+confirm. Stage write happens only after gate passes.
 
 # Create Plan
 
 **Stage 2 of the pipeline.** Gathers evidence from the codebase, then authors a detailed implementation plan with atomic steps, Cynefin tags, and verification criteria.
 
-**Prior stage:** `/gc-bootstrap` (optional — carry situational brief into Step 1)
+**Prior stage:** `/gc-bootstrap` (carry situational brief into Step 1 for bootstrap reuse)
 **Next stage:** `/gc-preflight`
 
-> **Pipeline state:** Write `{"stage":"create-plan","slug":"<feature-slug>","updatedAt":"<current ISO timestamp>"}` to `.claude/gc-pipeline.json` in the current project directory. Create `.claude/` first if absent.
-> - If slug argument provided at invocation (e.g., `/gc-plan gc-resume`): write at skill start. If slug is refined during Step 7, do a two-step write: initial write with invocation slug, then update after Step 7 confirms the final feature-slug.
-> - If no slug argument (bare `/gc-plan`): defer write to immediately after Step 1 (when feature-slug is first formalized in the Design Brief).
+> **Pipeline state:** Three explicit ordered steps — (1) Read `.claude/gc-pipeline.json` for gate (see Pipeline State Gate below), (2) evaluate gate condition, (3) write `{"stage":"create-plan","slug":"<feature-slug>","updatedAt":"<current ISO timestamp>"}` only AFTER gate passes. Never write before the gate evaluates. Create `.claude/` first if absent.
+> - If slug argument provided at invocation (e.g., `/gc-plan gc-resume`): write slug at step 3. If slug is refined during Step 7, do a two-step write: initial write at step 3 with invocation slug, then update after Step 7 confirms the final feature-slug.
+> - If no slug argument (bare `/gc-plan`): defer step 3 write to immediately after Step 1 (when feature-slug is first formalized in the Design Brief), but only after gate passes.
+
+### Pipeline State Gate
+
+Read `.claude/gc-pipeline.json` before any other action. If the file is absent or unparseable (corrupt JSON), treat the same as absent.
+
+| `stage` value | Action |
+| --- | --- |
+| File absent or unparseable | **STOP** — "No active session detected. Run `/gc-bootstrap` (lite minimum) first, then return to `/gc-plan`." |
+| `"eop"` | **WARN** — "Previous session is closed. Run `/gc-bootstrap` to open a new session — or confirm to continue planning on the same project." Await user confirmation before proceeding. |
+| `"bootstrap"` or `"create-plan"` | **Proceed** |
+| `"pre-flight"`, `"execute"`, `"review"` | **WARN** — "Pipeline is at stage `{stage}`. You can return to `/gc-{stage}` to continue, or revise the plan here and re-run preflight. Confirm to proceed." Await user confirmation before proceeding. Note: confirming during `execute` or `review` resets execution state — the next `/gc-execute` will start from the revised plan's todos. |
+| Any other value | **STOP** — treat as corrupt. "Unrecognized pipeline state. Run `/gc-bootstrap` first." |
+
+> **Recovery note:** gc-resume's recovery dispatch paths always verify `bootstrap` or `create-plan` stage is present before calling gc-plan — the gate's STOP-on-absent will not fire during a valid gc-resume recovery sequence.
 
 ## Execution Steps
 

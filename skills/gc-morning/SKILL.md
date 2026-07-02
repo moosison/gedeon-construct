@@ -10,6 +10,12 @@ model: opus
 // 1. [Constraint]: Step 2 reads only index.json + (conditionally) gc-pipeline.json. Never read config.json, ROADMAP.md, or STATE.md in Step 2 — those are Step 4 only.
 // 2. [Pattern]: humanStatus absent → cache miss → read gc-pipeline.json to derive Status. humanStatus present → cache hit → no additional reads.
 // 3. [Gotcha]: humanStatus absent does NOT mean the project is offline — it means the session is active (gc-bootstrap cleared it). Only show "Active (offline)" when gc-pipeline.json itself is unreachable.
+// 4. [Pattern]: Step 4 reads: try {project.path}/.construct/brief-cache.json FIRST.
+//    On ANY error (absent, invalid JSON, parse failure) — silently proceed to fallback reads.
+//    NEVER use Glob or Bash for Step 4 file discovery — all paths are hardcoded.
+//    ALWAYS read gc-pipeline.json fresh at Step 4 render time (not reused from Step 2).
+//    {project.path} is the 'path' field from the index.json entry already read in Step 2.
+//    brief-cache.json is written by gc-eop Step 2c at session close.
 
 # Morning Briefing
 
@@ -82,20 +88,39 @@ Then ask:
 
 ## Step 4: Project Mission Brief
 
-Once the user selects a project, deliver the full mission brief:
+Once the user selects a project, perform the following read sequence silently:
+
+**Read sequence:**
+1. Read `{project.path}/.construct/brief-cache.json`
+   - On SUCCESS (valid JSON, all 3 keys present):
+       cache HIT → use `activeMilestone`, `milestoneProgress`, `blockers` from cache
+       (`activeMilestone: null` is valid — only treat as missing if the key itself is absent)
+   - On ANY ERROR (file absent, invalid JSON, missing keys):
+       silently fall through — do NOT surface error to user
+       cache MISS → Read `{project.path}/.construct/ROADMAP.md`
+                    Read `{project.path}/.construct/STATE.md`
+                    extract `activeMilestone`, `milestoneProgress`, `blockers` from live reads
+
+2. Read `{project.path}/.claude/gc-pipeline.json`  ← ALWAYS, fresh at render time
+   extract: `stage` (for Pipeline stage field + Next recommended action derivation)
+
+3. `git rev-parse --abbrev-ref HEAD`  ← ALWAYS runtime
+   extract: current branch
+
+Then deliver the full mission brief:
 
 ```
 ## [Project Name] — Mission Brief
 
 **Pipeline stage:** [stage]
 **Active branch:** [branch or "main"]
-**Active milestone:** [name from ROADMAP.md — last incomplete]
-**Milestone progress:** [N/M phases complete]
+**Active milestone:** [activeMilestone — first incomplete, or "All milestones complete" if null]
+**Milestone progress:** [{milestoneProgress.complete}/{milestoneProgress.total} phases complete]
 
 **Next recommended action:** `/[gc-skill]`
 **Rationale:** [one sentence]
 
-**Unresolved gaps:** [list, or "None — clear to proceed"]
+**Unresolved gaps:** [blockers from cache/live read, or "None — clear to proceed"]
 ```
 
 Close with one line that signals readiness:

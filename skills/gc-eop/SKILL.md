@@ -16,6 +16,13 @@ model: sonnet
 // 5. [Pattern]: gc-pipeline.json write includes "slug" field. Preferred slug source: read gc-pipeline.json (carries slug after t1–t4 write it). Fallback chain: ARGUMENTS, plan frontmatter name: field, filename stem.
 // 6. [Gotcha]: gc-resume's artifact ladder matches '{slug}-session-digest_*.md' — if this filename pattern changes, update gc-resume Step 2's artifact ladder.
 // 7. [Pattern]: Step 2b writes humanStatus: "Closed: {plan-slug}" to index.json after Step 2. Use read→merge→write preserving ALL existing fields. humanStatus uses the PLAN slug (name: in plan frontmatter = slug in gc-pipeline.json), not the project slug from config.json.
+// 8. [Pattern]: Commit and Push creates feature/{plan-slug} branch BEFORE staging or committing (check-then-act: rev-parse --verify first). Never commit to main. PR creation delegates to /gc-ship — do not add gh pr create here.
+// 9. [Pattern]: Step 2c writes .construct/brief-cache.json after humanStatus write. (consumed by gc-morning Step 4)
+//    Always use FRESH reads for both ROADMAP.md and STATE.md in Step 2c — do NOT
+//    reuse Step 1b content (context compaction between Step 1b and Step 2c is real).
+//    Use ABSOLUTE path: {project.path}/.construct/brief-cache.json — derive
+//    {project.path} from the index.json entry (`path` field) already read in Step 2b.
+//    Skip Step 2c silently if .construct/ROADMAP.md does not exist.
 
 # End of Pipeline (EOP)
 
@@ -144,6 +151,33 @@ After the session digest is written in Step 2, update this project's entry in `~
 4. `{plan-slug}` is the value of the `name:` field from the active plan file's frontmatter — the same slug stored in `.claude/gc-pipeline.json`'s `slug` field written during gc-execute. This is the **plan slug**, not the project slug.
 5. Write the updated array back with the Write tool.
 
+### Step 2c: Write Morning Brief Cache
+
+Read `.construct/ROADMAP.md` (fresh read — do NOT reuse Step 1b content). Extract:
+
+- **activeMilestone:** Scan all `## Milestone:` headings in document order. For each, look for `**Status:**` in the next 10 lines (case-insensitive). Take the FIRST heading in document order where Status ≠ Completed; absent Status field = treat as incomplete. If all complete (or no milestones): `null`.
+- **milestoneProgress:** `complete` = count all lines matching `- [x]` across entire file; `total` = count all lines matching `- [` across entire file. *(lean: raw checkbox count — includes sub-tasks and code-block examples; scope to active milestone if precision required)*
+
+Read `.construct/STATE.md` (fresh read). Extract blockers:
+- If `## Blockers` section absent → `"None"`
+- If present but empty/whitespace-only → `"None"`
+- If present with content → extract verbatim, trim leading/trailing whitespace
+
+Write `{project.path}/.construct/brief-cache.json` (absolute path — `{project.path}` is the `path` field from the index.json entry found in Step 2b):
+```json
+{
+  "activeMilestone": "<name or null>",
+  "milestoneProgress": { "complete": N, "total": M },
+  "blockers": "<string>"
+}
+```
+
+If the Step 2b entry has no `path` field (newly appended project not yet registered with a path): skip Step 2c silently.
+If `.construct/ROADMAP.md` does not exist: skip Step 2c silently.
+If `.construct/STATE.md` does not exist: set `blockers: "None"` and proceed to write the cache.
+
+---
+
 ### Closing — Behavioral Gap Review (Gedeon)
 
 As Gedeon — the pipeline orchestrator — review the session before printing "Pipeline complete". Scan for signals that a skill deviated from its defined behavior during this pipeline run:
@@ -167,21 +201,28 @@ After gc-correct signals complete with 'Gaps captured and patches applied.', pro
 After the behavioral gap gate resolves (gc-correct complete or skipped), handle session changes based on repository state:
 
 1. **Detect repo state:**
-   - Run `git rev-parse --is-inside-work-tree`. If it fails → no git repo (go to step 4).
+   - Run `git rev-parse --is-inside-work-tree`. If it fails → no git repo (go to step 5).
    - Run `git remote -v`. If output is empty → git repo with no remote configured.
 
 2. **If git repo exists and uncommitted changes exist:**
-   - Stage modified project files (exclude `.env`, credential files, secrets).
-   - Commit with a message derived from the plan slug and session outcome:
-     `feat/chore({plan-slug}): {one-line summary}` — match the type to what was done (feat for new behavior, chore for maintenance, fix for corrections).
+   - **Resolve plan-slug:** Read from `.claude/gc-pipeline.json` `slug` field (written by gc-plan or gc-execute). Fallback: plan frontmatter `name:` field. Fallback: filename stem of the active plan file. Validate slug matches `[a-z0-9][a-z0-9._-]*`. If unresolvable or invalid: skip branch creation, commit to current branch, set push-target = current branch, note *"No valid plan slug resolved — committed to current branch."*
+   - **If slug is valid — check branch first** (check-then-act): run `git rev-parse --verify feature/{plan-slug}`.
+     - If the check succeeds (branch exists): `git checkout feature/{plan-slug}`; push-target = `feature/{plan-slug}`
+     - If the check fails (branch absent): `git checkout -b feature/{plan-slug}`; push-target = `feature/{plan-slug}`
+   - Stage tracked-modified project files (exclude `.env`, credential files, secrets). Only add untracked files by explicit path after confirming they are not secrets.
+   - Commit with message: `feat({plan-slug}): {one-line summary}` — match type to work done.
    - Append `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`.
 
-3. **If remote is configured:** push to the current branch — `git push origin {current-branch}`.
+3. **If remote is configured:** push the push-target branch — `git push origin {push-target} -u`.
    If no remote: skip push, note *"Changes committed locally — no remote configured."*
 
-4. **If no git repo:** skip commit and push entirely, note *"No git repository detected — session changes are local only."*
+4. **After a successful push to a feature branch:** Emit as the final line of gc-eop output (formatted distinctly, after all other output):
+   `NEXT STEP: Changes pushed to {push-target}. Run /gc-ship to open the pull request.`
+   If push-target was current branch (slug unresolvable): note the branch pushed; /gc-ship should be run from the correct feature branch if a PR is needed.
 
-5. If no uncommitted changes at any stage: skip silently.
+5. **If no git repo:** skip entirely, note *"No git repository detected — session changes are local only."*
+
+6. If no uncommitted changes: skip silently.
 
 Signal pipeline complete in Gedeon voice — name the digest path, confirm the commit hash and branch pushed (or local/no-repo status), and ask if anything remains before closing.
 
