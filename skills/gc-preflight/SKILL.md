@@ -61,7 +61,7 @@ choices. If not found, include this note: 'gc-discuss was not run or no CONTEXT.
 auditors should flag any gray areas as gaps.' Section 6 is always present in the package.
 ```
 
-Never dispatch auditors with only a plan excerpt — they need the full plan.
+Never dispatch auditors with only a plan excerpt — they need the full plan. Paste the plan's literal text into the dispatch prompt, not an orchestrator-condensed paraphrase — condensing has caused both false negatives (a fully-specified section read as a stub) and false positives (a fixed item read as still-broken) in past runs. When an auditor's finding hinges on a claim about an external file (a prior auditor's verdict, a roadmap line, an existing skill's structure), instruct that auditor to Read the real file itself before accepting or repeating the claim.
 
 ### Step 2: Parallel Audits
 
@@ -146,3 +146,5 @@ Each `/gc-preflight` run is independent. Never say "you already ran preflight."
 - Averaging confidence scores (always take minimum)
 - Discarding a gap because only one auditor found it
 - Pushback when user runs `/gc-preflight` again
+- Building a dispatch package by paraphrasing the plan instead of pasting its literal text
+- Accepting a claim about an external file (roadmap, another skill's structure, a prior auditor's verdict) without an auditor independently re-checking the source

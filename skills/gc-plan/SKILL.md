@@ -138,6 +138,8 @@ Numbered steps. Each must be:
 
 Every file in the merged affected-files list must map to ≥1 step.
 
+Any step that specifies an exact insertion point in an existing file ("insert after line X") or assumes that file's rendering/data structure (single value vs. table, one consumer vs. many) must be verified against that file's **actual current content**, not an earlier bootstrap-stage characterization or an assumed control-flow path. Two real bugs reached execution in one plan this way: an insertion point that sat after an unnoticed earlier `return`, and a file wrongly assumed to render a single-project line when it was actually a cross-project table. Both were missed by four rounds of pre-flight because none of them re-read the target file's full content — they audited the plan's description of it.
+
 ### Step 6: Verification (Definition of Done)
 
 1. **Test cases** — 3 per major change (success, failure, edge)

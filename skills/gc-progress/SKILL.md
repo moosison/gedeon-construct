@@ -27,6 +27,7 @@ Read:
 - **Total phases:** count of phases listed in ROADMAP.md
 - **Completion %:** `completed / total * 100`
 - **Milestone grouping:** match `phases/{slug}` directory names against milestone entries in ROADMAP.md; list uncategorized phases separately if no match found
+- **Cumulative usage:** if `.construct/USAGE.json` exists, read `cumulative.sessions` and `cumulative.totals.estimatedCostUsd`. Absent file → omit the line in Step 3, not an error.
 
 ### Step 3: Render Report
 
@@ -54,6 +55,9 @@ Show a simple text progress bar for each milestone:
 Auth:     ████████░░  80%  (4/5 phases)
 Payments: ██░░░░░░░░  20%  (1/5 phases)
 ```
+
+If `.construct/USAGE.json` exists, render one line after the milestone bars:
+`💰 Cumulative usage: {cumulative.sessions} sessions, ${cumulative.totals.estimatedCostUsd}` — followed by a caveat: "lags by the current session — folds in once a new session's first Stop event fires." Omit the line entirely if the file doesn't exist.
 
 ### Step 4: Next Action
 

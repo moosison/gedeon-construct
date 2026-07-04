@@ -29,6 +29,8 @@ Extract from STATE.md:
 
 From ROADMAP.md: count `- [x]` (done) and total `- [` (all checkboxes).
 
+Also read `{path}/.construct/USAGE.json` if it exists. Extract `cumulative.sessions` and `cumulative.totals.estimatedCostUsd` for the Cost column below. Missing file → `—` for that row, not an error (matches this step's existing "missing STATE.md → N/A" convention). Note for the reader: this is `cumulative` only — it lags by the current session and folds in once that project's next session's first Stop event fires.
+
 If a project path no longer exists or STATE.md is missing, show `N/A` for that row — do not error.
 
 ### Step 3: Render Dashboard
@@ -56,14 +58,18 @@ If a project path no longer exists or STATE.md is missing, show `N/A` for that r
 - Build the bar: `█` per done milestone, `░` per remaining, capped at 8 chars wide
 - If no ROADMAP.md or no checkboxes: `—`
 
+#### Cumulative cost column:
+- Format as `💰 {sessions} · ${estimatedCostUsd}` (4 decimal places), or `—` if `.construct/USAGE.json` doesn't exist for that project
+- This is `cumulative` only — it lags by the current session (see Step 2 note)
+
 #### Output table:
 
 ```markdown
 ## Gedeon Projects — {timestamp}
 
-| Project | Phase | Current Focus | Milestones | Errors | Last Active |
-| --- | --- | --- | --- | --- | --- |
-| **{slug}** | {badge} | {focus} | {bar} done/total | {err display} | {date} |
+| Project | Phase | Current Focus | Milestones | Errors | Cost | Last Active |
+| --- | --- | --- | --- | --- | --- | --- |
+| **{slug}** | {badge} | {focus} | {bar} done/total | {err display} | {cost display} | {date} |
 ```
 
 #### Error detail block (only if any project has errors > 0):

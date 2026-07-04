@@ -68,3 +68,4 @@ List the minimal edits to the plan file. If DELETE candidates exist, offer to re
 - A step exempted by the two rules above (acceptance criteria or user-explicit) that would otherwise fail the ladder renders as **PASS** with note `(exempted — user-requested, ladder bypassed)`, and is excluded from the estimated step-reduction percentage — exemptions are not savings.
 - A step that passes all 7 rungs is PASS — no manufactured findings.
 - This skill governs what to build, not how to build it. Pair with gc-review for correctness.
+- A DELETE verdict that cites an external file (e.g. "not in ROADMAP.md's acceptance criteria," "not in the discuss-phase decisions") must include the actual citation — the file path and the matching (or absent) line — not just the assertion. An unverified claim like this can propagate uncorrected through multiple plan revisions and preflight rounds if later reviewers trust the prose instead of checking the source.
