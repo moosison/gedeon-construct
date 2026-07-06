@@ -2,6 +2,7 @@
 name: gc-brain
 role: orchestrator
 model: opus
+model_tier: synthesis
 mode: orchestrate
 ---
 // @ai-rules:

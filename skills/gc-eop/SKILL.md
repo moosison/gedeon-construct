@@ -126,9 +126,9 @@ Produce a **session digest** — a compressed summary that bridges this session 
 ### Session Usage
 Read `.construct/USAGE.json`'s `currentSession` object (fresh read — do not reuse earlier reads from this session). Render verbatim, with no arithmetic performed here:
 - Tokens: `{totals.totalTokens}` ({totals.inputTokens} in / {totals.outputTokens} out / {totals.cacheCreationTokens} cache-write / {totals.cacheReadTokens} cache-read)
-- Estimated cost: `${totals.estimatedCostUsd}` (formatted to 4 decimal places)
+- Estimated cost: `${totals.estimatedCostUsd}` (formatted to 4 decimal places) — if `totals.unpriced` is `true`, append " (partial — one or more models below have no pricing entry; their tokens are real but excluded from this total)".
 - Elapsed: `{elapsedSeconds}` formatted as `Xm Ys`
-- Optionally list `byModel` entries as supporting detail, one line per model.
+- Optionally list `byModel` entries as supporting detail, one line per model. For any entry with `unpriced: true`, render its cost as "not tracked — no pricing entry" instead of `$0.0000`.
 - Caveat (always include, verbatim): "estimated — derived from session transcript data; excludes this closing message's own usage (recorded on the next Stop event, but not necessarily displayed anywhere until a later /gc-eop runs)."
 
 If `.construct/USAGE.json` is absent or has no `currentSession`, render: "Session Usage: not yet tracked" and skip the rest of this subsection.

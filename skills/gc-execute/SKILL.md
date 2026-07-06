@@ -97,6 +97,8 @@ Each executor:
 - **Closed-loop verification**: after each step, emits an observable signal (build passes, file exists, command output, test green) — if no signal is possible, explicitly reports why
 - Proposes a commit message after each meaningful change
 
+**Freshness-hash comparison (dispatch-time, per-step):** Immediately before dispatching an executor to implement any step carrying a `**File hash at plan time:** {digest}` annotation (recorded by `/gc-plan` Step 5), run `node hooks/lib/plan-verifier-cli.js hash <file>` via Bash again for that step's file and compare the result against the recorded digest. This check runs **per-step, at that step's own dispatch time** — never once globally at Step 1 — so a step in a later wave is checked after earlier waves have already run, correctly catching staleness those earlier waves may have introduced. If the digests match, dispatch proceeds normally. If they differ (or the file now hashes as `MISSING`), do not silently proceed: output `⚠ {file} has changed since this plan was written — re-verify this step's assumption before implementing`, and treat this as a pre-execution blocker for that specific step only — list it and let the user decide whether to re-verify, re-plan, or override before dispatching that step's executor. Unrelated steps in the same wave are unaffected.
+
 **Wait** for all agents in a wave to finish before starting the next wave.
 
 #### Behavioral Gap Tracking

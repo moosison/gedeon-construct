@@ -2,6 +2,7 @@
 name: gc-platform-reviewer
 role: platform-architecture-auditor
 model: sonnet
+model_tier: balanced
 mode: audit
 readonly: true
 ---

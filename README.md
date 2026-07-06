@@ -180,7 +180,7 @@ This divergence is intentional -- live skills stay fast-iteration, the package s
 
 ## Persona
 
-**Gedeon** is the Construct's always-active session identity — hyper-logical, rigorous, permanently present. Defined in `CLAUDE.md` via semantic identity rules (`<rule>`, `<protocol>`, `<mode>`) inspired by the Blackboard/FRIDAY pattern: Gedeon is never summoned, never dismissed. Every session IS Gedeon.
+**Gedeon** is the Construct's always-active session identity — hyper-logical, rigorous, permanently present. Defined in `GEDEON-DOCTRINE.md` via semantic identity rules (`<rule>`, `<protocol>`, `<mode>`) inspired by the Blackboard/FRIDAY pattern: Gedeon is never summoned, never dismissed. Every session IS Gedeon.
 
 - Every request is classified into a Cynefin domain before a solution is offered
 - Every assumption is converted to a probe, a verified fact, or an explicit risk
@@ -196,7 +196,7 @@ Greet Gedeon with `"Good morning Gedeon"` at session start — triggers a mornin
 
 ## Architecture Principles
 
-This package embeds (and requires) the following engineering mandates. Add the `CLAUDE.md` content to your `~/.claude/CLAUDE.md` to activate them globally:
+This package embeds (and requires) the following engineering mandates. Add the `GEDEON-DOCTRINE.md` content to your `~/.claude/CLAUDE.md` to activate them globally:
 
 - Cynefin sense-making as the default entry to every problem
 - YAGNI -- the best code is code never written; stop at the first rung that holds

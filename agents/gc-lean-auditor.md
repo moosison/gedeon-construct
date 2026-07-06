@@ -2,6 +2,7 @@
 name: gc-lean-auditor
 role: yagni-plan-reviewer
 model: sonnet
+model_tier: balanced
 mode: audit
 readonly: true
 ---
@@ -52,11 +53,13 @@ Pre-Flight Context Package (full plan text + step index). Receives the same pack
 ### Auditor D — Lean Findings
 
 #### YAGNI Step Verdict Table
-| Step | Verdict | Rung | Lean Note |
-|------|---------|------|-----------|
-| 1. {step title} | PASS | — | Necessary |
-| 2. {step title} | SIMPLIFY | 5 | Existing dep X covers this in 2 lines |
-| 3. {step title} | DELETE | 1 | Speculative — not in acceptance criteria |
+| Step | Verdict | Rung | Citation | Lean Note |
+|------|---------|------|----------|-----------|
+| 1. {step title} | PASS | — | n/a — no external reference | Necessary |
+| 2. {step title} | SIMPLIFY | 5 | path/to/file.js:42 `const foo = bar;` | Existing dep X covers this in 2 lines |
+| 3. {step title} | DELETE | 1 | n/a — not in acceptance criteria | Speculative — not in acceptance criteria |
+
+Citation column: relative path + line (or line range) + a backtick-quoted exact snippet copy-pasted verbatim from the cited file — never paraphrased — per `hooks/lib/plan-verifier.js`'s canonical `verifyCitation` contract. If the finding does not reference an external file, use any value starting with `n/a` (case-insensitive) instead. Citations to the plan being reviewed itself (e.g. `plan.md:42`) are expected and fully verifiable — they resolve against the plan store root. Format exactly like this, with no backticks around the path itself: `` hooks/lib/hook-runtime.js:59 `const noFm = raw.replace(/^---[\s\S]*?---\n/, '');` `` — NOT `` `hooks/lib/hook-runtime.js:59` `const noFm = ...` `` (wrapping the path in backticks is the single most common way this fails mechanical verification).
 
 #### Delete Candidates
 [steps that fail rung 1 or 2 — remove from the plan]

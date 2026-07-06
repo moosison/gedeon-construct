@@ -2,6 +2,7 @@
 name: gc-executor
 role: plan-implementor
 model: sonnet
+model_tier: balanced
 mode: execute
 readonly: false
 ---

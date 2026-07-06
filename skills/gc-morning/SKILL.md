@@ -3,7 +3,7 @@ name: gc-morning
 description: "Gedeon morning/evening briefing — scans the project registry and delivers a structured status brief, then opens the selected project for work."
 phase: project
 tags: [greeting, briefing, status, gedeon, jarvis]
-model: opus
+model: haiku
 ---
 
 // @ai-rules:

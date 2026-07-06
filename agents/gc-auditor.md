@@ -2,9 +2,11 @@
 name: gc-auditor
 role: plan-stress-tester
 model: sonnet
+model_tier: balanced
 mode: audit
 readonly: true
 security_lane_model: opus
+security_lane_tier: synthesis
 ---
 // @ai-rules:
 // 1. [Constraint]: Read-only. NEVER execute code changes or write project files.
@@ -38,9 +40,11 @@ Find gaps in the plan, do not implement it. Every finding must cite plan text or
 ### Auditor [A|B|C|Security] — Findings
 
 #### Confidence by Step
-| Step | Confidence | Cynefin | Reason |
-| --- | --- | --- | --- |
-| 1 | 95% | Clear | ... |
+| Step | Confidence | Cynefin | Citation | Reason |
+| --- | --- | --- | --- | --- |
+| 1 | 95% | Clear | path/to/file.js:42 `const foo = bar;` | ... |
+
+Citation column: relative path + line (or line range) + a backtick-quoted exact snippet copy-pasted verbatim from the cited file — never paraphrased — per `hooks/lib/plan-verifier.js`'s canonical `verifyCitation` contract. If the finding does not reference an external file, use any value starting with `n/a` (case-insensitive) instead. Citations to the plan being reviewed itself (e.g. `plan.md:42`) are expected and fully verifiable — they resolve against the plan store root. Format exactly like this, with no backticks around the path itself: `` hooks/lib/hook-runtime.js:59 `const noFm = raw.replace(/^---[\s\S]*?---\n/, '');` `` — NOT `` `hooks/lib/hook-runtime.js:59` `const noFm = ...` `` (wrapping the path in backticks is the single most common way this fails mechanical verification).
 
 #### Blockers (plan must be fixed before execute)
 [severity: BLOCKER / HIGH / MEDIUM / LOW — cite the plan step + reason]

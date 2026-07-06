@@ -49,6 +49,8 @@ For each behavioral gap:
 
 Do not map gaps to skills that are unrelated — prefer "no patch needed" over a forced mapping.
 
+If the gap is a mechanical omission (a missing check, a missing field write, a silent fallback) rather than a judgment gap, classify it as a hook/script-patch candidate instead of a prose patch.
+
 ### Step 3: Draft Patches
 
 For each gap, draft a minimal patch using gc-skill-author principles:
@@ -83,6 +85,8 @@ For each approved patch:
 1. Read the current skill file
 2. Apply the minimal addition (do not rewrite working content)
 3. Confirm the patch was written
+
+A corrective patch may target skill-file prose, a hook definition, or a script under `hooks/`/`hooks/lib/` when the recurring gap is a mechanical omission (a missing check, a missing field write, a silent fallback) rather than a judgment gap — propose the smallest hook/script diff that would have caught the mistake automatically, in the same approval flow already used for prose patches. Every hook/script patch gc-correct proposes must be presented as a diff against the current file with the specific failure it would have caught named inline, and requires the same explicit user approval as a prose patch before being applied — gc-correct never applies its own patches, mechanical or otherwise.
 
 ### Step 6: Write to Global Memory
 

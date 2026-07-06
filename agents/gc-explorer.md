@@ -2,6 +2,7 @@
 name: gc-explorer
 role: evidence-gatherer
 model: haiku
+model_tier: mechanical
 mode: explore
 readonly: true
 ---

@@ -59,7 +59,7 @@ If a project path no longer exists or STATE.md is missing, show `N/A` for that r
 - If no ROADMAP.md or no checkboxes: `—`
 
 #### Cumulative cost column:
-- Format as `💰 {sessions} · ${estimatedCostUsd}` (4 decimal places), or `—` if `.construct/USAGE.json` doesn't exist for that project
+- Format as `💰 {sessions} · ${estimatedCostUsd}` (4 decimal places), or `—` if `.construct/USAGE.json` doesn't exist for that project. If `cumulative.totals.unpriced` is `true`, append `*` to the figure and add a one-line footnote below the table: "`*` partial — excludes tokens from unpriced models."
 - This is `cumulative` only — it lags by the current session (see Step 2 note)
 
 #### Output table:

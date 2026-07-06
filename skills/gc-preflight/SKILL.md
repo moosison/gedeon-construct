@@ -63,6 +63,8 @@ auditors should flag any gray areas as gaps.' Section 6 is always present in the
 
 Never dispatch auditors with only a plan excerpt — they need the full plan. Paste the plan's literal text into the dispatch prompt, not an orchestrator-condensed paraphrase — condensing has caused both false negatives (a fully-specified section read as a stub) and false positives (a fixed item read as still-broken) in past runs. When an auditor's finding hinges on a claim about an external file (a prior auditor's verdict, a roadmap line, an existing skill's structure), instruct that auditor to Read the real file itself before accepting or repeating the claim.
 
+Every auditor now returns a **Citation column** per finding (per `agents/gc-auditor.md` and `agents/gc-lean-auditor.md`'s updated tables) — relative path + line(s) + a backtick-quoted exact snippet, or any `n/a`-prefixed value if the finding cites nothing external, per `hooks/lib/plan-verifier.js`'s canonical `verifyCitation`/`extractCitations` contract. These citations are mechanically verified in Step 2.5, not merely trusted.
+
 ### Step 2: Parallel Audits
 
 Dispatch **4 parallel pre-flight auditors** in one message. All read-only.
@@ -74,13 +76,29 @@ Dispatch **4 parallel pre-flight auditors** in one message. All read-only.
 | **C** | `sonnet` | `agents/gc-auditor.md` | Contracts, platform abstractions, edge cases |
 | **D — Lean** | `sonnet` | `agents/gc-lean-auditor.md` | YAGNI ladder per atomic step — flags speculative scope, duplication, unnecessary dependencies before execution |
 
-**Optional security lane (5th auditor):** When the plan touches auth/authz, secrets, public endpoints, PII, or trust boundaries — dispatch a security-focused auditor using `opus` for maximum depth. Mission: plan-level threat model gaps only (not code audit).
+**Optional security lane (5th auditor):** When the plan touches auth/authz, secrets, public endpoints, PII, or trust boundaries — dispatch a security-focused auditor using `opus` for maximum depth. Mission: plan-level threat model gaps only (not code audit). Also trigger when the plan introduces code that resolves a file path or URL built from externally-influenced input (user-authored text, LLM-generated content, citation-style references, template variables) — even if none of the domains above are otherwise present. Path/URL resolution from untrusted input is a self-contained vulnerability class (traversal, arbitrary read, SSRF) that the other trigger conditions don't reliably catch; a plan can be free of auth/secrets/PII/endpoints and still ship a real vulnerability of this shape.
 
 **Optional platform lane (6th auditor):** When the plan introduces abstractions, shared services, APIs consumed by other teams, or IaC modules — dispatch using `sonnet`, agent: `agents/gc-platform-reviewer.md`. Mission: Hohpe 6-test + 7-C audit at plan level. Trigger phrase: "others will build on top of this."
 
 Wait for all auditors before Step 3.
 
-> **Tooling note:** All file inspection must use dedicated read tools (file reading, pattern search, path matching). Avoid shell commands for read operations — they trigger permission prompts in Claude Code. Reserve shell tools only for operations the dedicated tools cannot perform (e.g. encoding manipulation, process control).
+> **Tooling note:** All file inspection must use dedicated read tools (file reading, pattern search, path matching). Avoid shell commands for read operations — they trigger permission prompts in Claude Code. Reserve shell tools only for operations the dedicated tools cannot perform (e.g. encoding manipulation, process control). Exception: the citation/control-flow/freshness verifier (`hooks/lib/plan-verifier-cli.js`) is a deliberate, sanctioned Bash invocation — it performs a check no dedicated read tool can (comparing structured claims against file content programmatically), not an oversight of this note.
+
+### Step 2.5: Citation Verification
+
+Each auditor's Citation column is mechanically verified before merging — the skill-instruction half of the same mechanism `hooks/gc-pre-write-guard.js` enforces automatically as a hook-level backstop for file writes.
+
+For each auditor (A, B, C, D), in turn:
+
+1. Write that auditor's raw response text verbatim to a scratch file in the plan store: `~/.claude/gedeon/plans/{plan-slug}-auditor-{A|B|C|D}-scratch.md`. This step is required — auditor output exists only as in-conversation text at this point, and `extract-citations` needs a real on-disk file.
+2. Run `node hooks/lib/plan-verifier-cli.js extract-citations <scratch-file>` — emits one `{step}\t{citationText}` pair per row of the Citation-column table, per `hooks/lib/plan-verifier.js`'s canonical `extractCitations` contract, followed by a trailing `SKIPPED\t{N}` line (the anonymous count of malformed rows — `extractCitations` computes this directly, no separate tally needed).
+3. Set aside the trailing `SKIPPED\t{N}` line — read `N` for the malformed-row count below, and do NOT pass this line into the next step. Of the remaining `{step}\t{citationText}` pairs, drop any whose `citationText` is `n/a`-prefixed (case-insensitive) — auto-valid, not sent for verification.
+4. Pipe the remaining pairs into `node hooks/lib/plan-verifier-cli.js verify-citations` (stdin, one `{step}\t{citationText}` pair per line). Read back one `{step}\tPASS` or `{step}\tFAIL: {reason}` line per input pair. The `step` tag identifies which finding each result belongs to directly — never infer by position, since two findings can carry identical or near-identical citation text.
+5. Delete the scratch file as the last action for that auditor, **unconditionally** — whether `extract-citations`/`verify-citations` succeeded or failed. A mid-run failure must not leave an orphaned scratch file in the plan store.
+
+If the `SKIPPED` count (`N`) from step 2 is greater than 0, surface it as an **anonymous count only**: "N row(s) in Auditor {A|B|C|D}'s output could not be parsed for citation checking." A skipped row has no `step` tag by design — extraction cannot determine which finding was affected. This does not identify the specific finding, and does not abort verification for that auditor's other findings or any other auditor's findings. (This is deliberately the same anonymous-count treatment `hooks/gc-pre-write-guard.js`'s citation backstop uses for the identical shared mechanism — keep the two consistent.)
+
+Carry every `{step}\tFAIL: {reason}` result forward into Step 3's merge.
 
 ### Step 3: Merge (Pessimistic)
 
@@ -93,6 +111,8 @@ Wait for all auditors before Step 3.
 | Contradictions | Flag for user; do not silently resolve |
 | Lean DELETE verdicts | Treated as scope blockers — listed in Lean Scope Review and Gap Analysis |
 | Lean score | Worst score (LEAN/TRIM/OVERBUILT) — included in Confidence Dashboard |
+| Citation verification failed | Exclude that finding (identified by its `step` tag from Step 2.5, never by position) from the confidence score entirely — record it in Gap Analysis as an unverified/failed-citation claim |
+| Citation row unparseable (malformed) | No per-finding exclusion possible — no `step` tag exists. Surface Step 2.5's anonymous count in Gap Analysis; does not gate any specific finding or block the rest of that auditor's results |
 
 Cross-issue correlation: Collapse findings that share one root cause before finalizing.
 

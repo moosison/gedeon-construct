@@ -2,6 +2,7 @@
 name: gc-reviewer
 role: code-reviewer
 model: opus
+model_tier: synthesis
 mode: review
 readonly: true
 ---

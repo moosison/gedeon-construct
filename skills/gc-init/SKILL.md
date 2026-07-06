@@ -12,7 +12,7 @@ tags: [setup, init, install, gedeon, persona]
 // 4. [Pattern]: User name is stored as <context id="user-profile"> inside the markers — always first in the block.
 // 5. [Gotcha]: Markers are exactly <!-- gedeon-construct:start --> and <!-- gedeon-construct:end --> — verbatim.
 // 6. [Pattern]: On re-run, replace content between markers. On new install, append (create file if absent).
-// 7. [Pattern]: Read ~/.claude/gedeon/config.json for packagePath, then read {packagePath}/CLAUDE.md to inject.
+// 7. [Pattern]: Read ~/.claude/gedeon/config.json for packagePath, then read {packagePath}/GEDEON-DOCTRINE.md to inject.
 
 # Gedeon Init
 
@@ -80,7 +80,7 @@ Wait for the user's answer. Store as `{name}`.
 
 ### Step 4: Build and Write the Block
 
-Read `{packagePath}/CLAUDE.md` from disk (full content, verbatim).
+Read `{packagePath}/GEDEON-DOCTRINE.md` from disk (full content, verbatim).
 
 Construct the injection block:
 
@@ -91,7 +91,7 @@ Construct the injection block:
 Preferred name: {name}
 </context>
 
-{full contents of packagePath/CLAUDE.md}
+{full contents of packagePath/GEDEON-DOCTRINE.md}
 
 <!-- gedeon-construct:end -->
 ```
@@ -150,4 +150,4 @@ On confirmation: read the file, excise everything between and including the mark
 - Asking scope before delivering the explanation block
 - Appending instead of replacing when markers already exist
 - Using third-person or installer-script tone ("Gedeon has been configured...")
-- Injecting only the identity section — always inject the full CLAUDE.md content
+- Injecting only the identity section — always inject the full GEDEON-DOCTRINE.md content

@@ -2,6 +2,7 @@
 name: gc-researcher
 role: knowledge-gatherer
 model: sonnet
+model_tier: balanced
 mode: research
 readonly: true
 web_access: true
