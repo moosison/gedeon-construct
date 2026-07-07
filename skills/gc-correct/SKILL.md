@@ -108,7 +108,7 @@ gc-preflight: 0
 gc-bootstrap: 0
 ```
 
-Find the entry for the patched skill, set it to 0. Rewrite the `## Error Counts` section with the updated values using the Write tool (read full STATE.md → replace section → write back).
+Reset the entry for the skill that **flagged** the gap (the incremented Error Counts row), not only the skill whose file received the patch — a gap flagged under one stage is often fixed in another skill's file (e.g. flagged by gc-preflight, patched into gc-plan), and the patched skill may have no Error Counts row at all; that is never a reason to skip resetting the flagging row. Set each such row to 0. Rewrite the `## Error Counts` section with the updated values using the Write tool (read full STATE.md → replace section → write back).
 
 ### Closing
 

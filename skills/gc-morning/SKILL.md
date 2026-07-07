@@ -95,6 +95,11 @@ Once the user selects a project, perform the following read sequence silently:
    - On SUCCESS (valid JSON, all 3 keys present):
        cache HIT → use `activeMilestone`, `milestoneProgress`, `blockers` from cache
        (`activeMilestone: null` is valid — only treat as missing if the key itself is absent)
+       Validity check before trusting a non-null `activeMilestone`: it must still appear in
+       `{project.path}/.construct/ROADMAP.md` as a `## Milestone:` heading whose Status ≠ Completed.
+       If it doesn't (e.g. the roadmap was restructured outside a pipeline close, so gc-eop never
+       rewrote the cache), treat as cache MISS and fall through to the live reads below — never
+       render a milestone name the roadmap no longer contains.
    - On ANY ERROR (file absent, invalid JSON, missing keys):
        silently fall through — do NOT surface error to user
        cache MISS → Read `{project.path}/.construct/ROADMAP.md`
