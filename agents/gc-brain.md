@@ -21,7 +21,7 @@ The pipeline engine dispatched by Gedeon. Receives a context package (user inten
 
 - **Cynefin-first:** Classify every new request before responding. Never answer from Disorder.
 - **Probe-before-assume:** Verify before building. Convert every assumption to a verified fact, explicit question, or stated risk.
-- **Never skip preflight:** Confidence < 90% → improve the plan, then `/gc-preflight` again. Pre-flight is a loop, not a gate.
+- **Never skip preflight:** Gate: STOP → improve the plan, then `/gc-preflight` again. Pre-flight is a loop, not a gate.
 - **Minimum wins:** Merge auditor and reviewer scores by taking the minimum. Never average.
 - **Smallest batch first:** Dispatch wave 1, evaluate results, then dispatch wave 2. No cross-wave speculation.
 - **Observable close:** Every completed step must emit a verification signal before being marked done.
@@ -47,5 +47,5 @@ Structure every result for Gedeon to synthesize:
 
 **Allowed patterns:**
 - *"Review is clean — one MEDIUM finding fixed. Shall we close the pipeline?"*
-- *"Preflight at 94%. Shall I kick off the execute wave now?"*
+- *"Preflight: Gate: PASS (94% display). Shall I kick off the execute wave now?"*
 - *"Plan is written. Looks solid — want me to stress-test it with preflight?"*

@@ -1,6 +1,6 @@
 ---
 name: gc-preflight
-description: "Stage 3 of the pipeline. Stress-tests a plan file before execution by running parallel audits and producing a confidence score. Run iteratively until ≥90% confidence. Requires a plan file from /gc-plan."
+description: "Stage 3 of the pipeline. Stress-tests a plan file before execution by running parallel audits and producing a binary mechanical Gate (PASS/STOP). Run iteratively until Gate: PASS. Requires a plan file from /gc-plan."
 phase: pipeline
 requires:
   - gc-plan
@@ -22,7 +22,7 @@ model: opus
 **Stage 3 of the pipeline.** Stress-tests a plan by dispatching parallel auditors, then produces a unified confidence report. Run as many times as needed — each run writes a new timestamped report.
 
 **Prior stage:** `/gc-plan`
-**Next stage:** `/gc-execute` (when confidence ≥ 90%)
+**Next stage:** `/gc-execute` (when Gate: PASS)
 
 > **Pipeline state:** At the start of this skill, write `{"stage":"pre-flight","slug":"<plan-slug>","updatedAt":"<current ISO timestamp>"}` to `.claude/gc-pipeline.json` in the current project directory. Create `.claude/` first if absent. Slug from plan frontmatter `name:` field; fallback to filename stem (strip `.plan.md`).
 
@@ -100,6 +100,13 @@ If the `SKIPPED` count (`N`) from step 2 is greater than 0, surface it as an **a
 
 Carry every `{step}\tFAIL: {reason}` result forward into Step 3's merge.
 
+### Step 2.6: Mechanical Gate Checks
+
+- For every atomic step in the plan carrying a `**File hash at plan time:** {digest}` annotation: **first** validate the file path against a strict relative-path charset (`^[A-Za-z0-9._/-]+$`, no leading `-`) — if it fails, record a mechanical-gate failure ("invalid file path in annotation") and do **not** invoke any CLI subcommand with it. If it passes, run `node hooks/lib/plan-verifier-cli.js hash <file>` and compare to the recorded digest. Mismatch (or `MISSING`) → mechanical-gate failure for that step.
+- For every atomic step carrying a `**Control-flow check at plan time:** {file}:{entryLine}:{insertionLine}` annotation: validate `<file>` the same charset way, and validate `entryLine`/`insertionLine` are pure non-negative integers (`^\d+$`) before interpolating either into a command. If either validation fails, record a mechanical-gate failure without invoking the CLI. Otherwise re-run `node hooks/lib/plan-verifier-cli.js check-control-flow <file> <entryLine> <insertionLine>`. Three possible outputs, three distinct handling rules: (1) `CLEAR` → passes. (2) A populated list of flagged risky lines → mechanical-gate failure for that step **unless** the plan step text already has an explicit resolution for every flagged line. (3) `UNRESOLVED: ...` → **always** a mechanical-gate failure, with no exception and no escape hatch — there are no flagged lines to resolve, so "resolved" can never legitimately apply.
+- If the plan's own affected-files list includes any `skills/gc-*/SKILL.md` or `agents/gc-*.md`: run `node hooks/lib/tier-consistency-check.js` from the workspace root and read its exit code — non-zero → mechanical-gate failure (tier drift).
+- Aggregate into a single `mechanicalGateStatus`: `CLEAR` only if citation verification (Step 2.5), every hash check, every control-flow check (with `UNRESOLVED` treated as failure, not as CLEAR), and (when run) tier-consistency all passed; otherwise `FAILED` with the list of specific failing checks.
+
 ### Step 3: Merge (Pessimistic)
 
 | Rule | Policy |
@@ -113,6 +120,7 @@ Carry every `{step}\tFAIL: {reason}` result forward into Step 3's merge.
 | Lean score | Worst score (LEAN/TRIM/OVERBUILT) — included in Confidence Dashboard |
 | Citation verification failed | Exclude that finding (identified by its `step` tag from Step 2.5, never by position) from the confidence score entirely — record it in Gap Analysis as an unverified/failed-citation claim |
 | Citation row unparseable (malformed) | No per-finding exclusion possible — no `step` tag exists. Surface Step 2.5's anonymous count in Gap Analysis; does not gate any specific finding or block the rest of that auditor's results |
+| **Gate verdict** | **PASS** iff `mechanicalGateStatus` (Step 2.6) is `CLEAR` **AND** zero BLOCKER/HIGH findings remain across all auditors (Gaps/blockers union row, above) — **STOP** otherwise |
 
 Cross-issue correlation: Collapse findings that share one root cause before finalizing.
 
@@ -123,7 +131,7 @@ Produce **Auditor agreement matrix** (task × A/B/C/D × confidence).
 Path: `~/.claude/gedeon/plans/{plan-slug}-Pre-Flight-Review_{YYYY-MM-DD_HHMM}.md`
 
 Required sections:
-1. Confidence Dashboard (overall %, Ready/Caution/Stop, top blockers, lean score)
+1. Confidence Dashboard (overall %, **Gate: PASS/STOP**, top blockers, lean score)
 2. Task-by-Task Analysis (min confidence, agreement column)
 3. Integration Risk Matrix
 4. Gap Analysis (ambiguity, missing context, risk, source auditor)
@@ -133,21 +141,22 @@ Required sections:
 8. Auditor Disagreements (if any)
 9. Path to Green (blockers + suggestions)
 
+Section 1 (Confidence Dashboard) format contract: include a standalone line, exact format `**Gate: PASS**` or `**Gate: STOP**` (regex: `^\*\*Gate:\s*(PASS|STOP)\*\*`). **This line must appear exactly once, within Section 1 only.** If more than one line ever matches this pattern, consumers take the first occurrence within Section 1 and treat any other match elsewhere in the report as prose, never as the authoritative signal. Keep the existing `| **Overall Confidence** | **N%** |` table row, labeled "(display only — informational, never load-bearing for the Gate)". When Gate is STOP for mechanical reasons, list every mechanical-gate failure (Step 2.6) in Section 1 immediately below the Gate line, one per line, format: `- {check name}: {file} — {reason}`.
+
 ### Step 5: Present
 
 Paste the full Pre-Flight Dashboard in the conversation.
 
-State outcome by tier:
+State outcome by Gate:
 
-| Confidence | Tier | Action |
-| --- | --- | --- |
-| ≥ 90% | **Ready** | Report confidence score and propose execute as Gedeon. |
-| 70–89% | **Caution** | Report confidence, surface Path to Green, propose re-preflight as Gedeon. |
-| < 70% | **Stop** | Report confidence and critical gaps as Gedeon. Suggest gc-correct if this pattern recurs. |
+| Gate | Action |
+| --- | --- |
+| **PASS** | Report Gate: PASS (and % as secondary context), mention `/gc-execute --auto` as an available option since the plan has now earned it, and propose execute as Gedeon. |
+| **STOP** | Report Gate: STOP, list every mechanical-gate failure (Step 2.6) and BLOCKER/HIGH finding, surface Path to Green, propose re-preflight as Gedeon. |
 
 **Stop status is advisory** — user may always update plan and re-run.
 
-When verdict is **Stop** (< 70%): read `.construct/STATE.md`. If `## Error Counts` section is absent, create it with defaults (`gc-execute: 0`, `gc-preflight: 0`, `gc-bootstrap: 0`). Increment `gc-preflight` by 1. Write the updated section back with the Write tool.
+When Gate is **STOP**: read `.construct/STATE.md`. If `## Error Counts` section is absent, create it with defaults (`gc-execute: 0`, `gc-preflight: 0`, `gc-bootstrap: 0`). Increment `gc-preflight` by 1. Write the updated section back with the Write tool. Note: this trigger now fires on any unresolved BLOCKER/HIGH finding or mechanical-gate failure, a broader condition than the prior "<70%" threshold — a plan that previously scored 75% ("Caution," no increment) with one HIGH finding now increments every time. This is intentional, not a silent behavior drift: a plan with any unresolved BLOCKER/HIGH finding should count toward the behavioral-gap threshold.
 
 ## Iteration Loop
 

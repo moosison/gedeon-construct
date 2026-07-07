@@ -119,7 +119,7 @@ Produce a **session digest** — a compressed summary that bridges this session 
 ### Pipeline stages completed
 - /gc-bootstrap: {outcome}
 - /gc-plan: {plan slug}
-- /gc-preflight: {confidence%, run count}
+- /gc-preflight: {Gate: PASS|STOP}, {confidence%} (display only), {run count}
 - /gc-execute: {outcome}
 - /gc-review: {verdict}
 

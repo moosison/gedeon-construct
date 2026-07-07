@@ -43,7 +43,7 @@ Build the Execution Context Package:
 
 ### 3. Pre-Flight Status
 - Latest report path + date
-- Overall confidence, Ready/Caution/Stop
+- Gate: PASS/STOP (overall % as secondary display)
 - Path to Green blockers (if any)
 
 ### 4. Execution State
@@ -59,8 +59,8 @@ Implement the approved plan using wave grouping. For Complex/probe steps, run sa
 | Condition | Action |
 | --- | --- |
 | No pre-flight report | Recommend `/gc-preflight`. **Do not refuse** — user may override. |
-| Confidence ≥ 90%, not Stop | State: "Pre-flight passed at {N}%. Proceeding." |
-| Confidence < 90% or Stop | List blockers. Suggest updating plan → `/gc-preflight` again. **User explicit override → proceed.** |
+| Latest report shows **Gate: PASS** | State: "Pre-flight passed (Gate: PASS). Proceeding." |
+| Latest report shows **Gate: STOP** | List blockers. Suggest updating plan → `/gc-preflight` again. **User explicit override → proceed.** |
 
 Iterative pre-flight is **expected**. Never block the user from running `/gc-preflight` or `/gc-execute` again.
 
@@ -94,10 +94,18 @@ Each executor:
 - Implements plan steps atomically, one at a time
 - Updates plan frontmatter todo statuses as it completes each step
 - For **Complex** steps: runs safe-to-fail probe before implementing; reports result
-- **Closed-loop verification**: after each step, emits an observable signal (build passes, file exists, command output, test green) — if no signal is possible, explicitly reports why
+- **Closed-loop verification**: after each step, emits an observable signal (build passes, file exists, command output, test green). Three outcomes: a positive signal → mark the step `completed`. If no signal is possible, explicitly report why (existing behavior — the step may still be marked `completed`). If a signal **is** possible and is **negative** (build fails, test red, lint fails): mark that todo `blocked` in plan frontmatter, halt dispatch of any remaining steps in the current wave, and require user input before continuing — do not mark the step `completed` and do not silently retry.
 - Proposes a commit message after each meaningful change
 
-**Freshness-hash comparison (dispatch-time, per-step):** Immediately before dispatching an executor to implement any step carrying a `**File hash at plan time:** {digest}` annotation (recorded by `/gc-plan` Step 5), run `node hooks/lib/plan-verifier-cli.js hash <file>` via Bash again for that step's file and compare the result against the recorded digest. This check runs **per-step, at that step's own dispatch time** — never once globally at Step 1 — so a step in a later wave is checked after earlier waves have already run, correctly catching staleness those earlier waves may have introduced. If the digests match, dispatch proceeds normally. If they differ (or the file now hashes as `MISSING`), do not silently proceed: output `⚠ {file} has changed since this plan was written — re-verify this step's assumption before implementing`, and treat this as a pre-execution blocker for that specific step only — list it and let the user decide whether to re-verify, re-plan, or override before dispatching that step's executor. Unrelated steps in the same wave are unaffected.
+**Track Verification (dispatch-time, per-step):** Immediately before dispatching an executor to implement any step:
+- For a step carrying a `**File hash at plan time:** {digest}` annotation (recorded by `/gc-plan` Step 5): charset-validate the file path (`^[A-Za-z0-9._/-]+$`, no leading `-`) before invoking anything with it — if it fails, treat as a pre-execution blocker without invoking the CLI. If it passes, run `node hooks/lib/plan-verifier-cli.js hash <file>` via Bash again for that step's file and compare the result against the recorded digest. This check runs **per-step, at that step's own dispatch time** — never once globally at Step 1 — so a step in a later wave is checked after earlier waves have already run, correctly catching staleness those earlier waves may have introduced. If the digests match, dispatch proceeds normally. If they differ (or the file now hashes as `MISSING`), do not silently proceed: output `⚠ {file} has changed since this plan was written — re-verify this step's assumption before implementing`, and treat this as a pre-execution blocker for that specific step only — list it and let the user decide whether to re-verify, re-plan, or override before dispatching that step's executor. Unrelated steps in the same wave are unaffected.
+- For a step carrying a `**Control-flow check at plan time:** {file}:{entryLine}:{insertionLine}` annotation: charset-validate the file path the same way, and confirm `entryLine`/`insertionLine` are pure integers before invoking `node hooks/lib/plan-verifier-cli.js check-control-flow <file> <entryLine> <insertionLine>`. Treat `UNRESOLVED: ...` output as a failure, identically to a hash mismatch — never as a pass. Same blocker treatment as the hash-mismatch case above.
+
+A "track" = one atomic step + its verification criterion + its freshness-hash + its control-flow check, together re-verified at that step's own dispatch time.
+
+#### Auto-Mode Human-In-Loop Triggers
+
+`gc-execute` recognizes an opt-in `--auto` invocation argument (e.g. `/gc-execute --auto`). Default invocation (no `--auto`) is completely unchanged from the turn-by-turn behavior described above. Under `--auto`, waves proceed without pausing for confirmation between them, **except exactly two conditions force a mandatory stop-and-wait-for-user regardless of `--auto`**: (a) a Track Verification check — including an `UNRESOLVED` result — or a step's own verification signal fails mid-run (see Closed-loop verification and Track Verification above); (b) a Cynefin-tagged **Complex** step is reached — always pauses before implementing past its required probe, regardless of probe outcome or any mechanical-check status. This two-condition list is intentional v1 scope, not yet an extensible registry — a documented, deliberate limitation, not an oversight. `gc-preflight`'s Gate: PASS message may recommend `--auto` as an available option, but never invokes it — auto-mode is always opt-in and user-triggered, never silently entered. Explicitly distinct from Claude Code's own CLI-level "Auto Mode" (harness permission-classifier behavior) — this is a gc-pipeline-level concept layered on top of whatever harness-level auto-mode is or isn't active.
 
 **Wait** for all agents in a wave to finish before starting the next wave.
 

@@ -20,7 +20,7 @@ No MCP server required. All logic is inline in skill files.
 
 /gc-bootstrap --> /gc-discuss (opt) --> /gc-plan --> /gc-preflight
                                                           |
-                            <----------- retry if <90% ---+
+                            <----------- retry if Gate: STOP ---+
                                                           |
                                                    /gc-execute
                                                           |
@@ -44,7 +44,7 @@ State is tracked per-project at `.claude/gc-pipeline.json`. Hooks remind you of 
 | `gc-bootstrap` | 1              | Workspace scan, situational brief, onboarding                    |
 | `gc-discuss`   | 1.5 (optional) | Requirements elicitation, writes `.construct/CONTEXT.md`         |
 | `gc-plan`      | 2              | 3 parallel explorers -> evidence merge -> Cynefin-tagged plan    |
-| `gc-preflight` | 3              | 4 parallel auditors -> pessimistic confidence score (>=90% = go) |
+| `gc-preflight` | 3              | 4 parallel auditors -> binary mechanical Gate (PASS/STOP; % is display-only) |
 | `gc-execute`   | 4              | Wave-based parallel execution, WIP cap 5, closed-loop verify     |
 | `gc-review`    | 5              | Multi-reviewer panel, security mandatory, pessimistic merge      |
 | `gc-eop`       | 6              | Extract learnings, corrective memory, session digest             |

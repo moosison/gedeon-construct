@@ -55,7 +55,7 @@ Citation column: relative path + line (or line range) + a backtick-quoted exact 
 #### Integration Risks
 [cross-file or cross-step dependencies that could break]
 
-#### Overall Confidence: [N]% — [READY / CAUTION / STOP]
+#### Overall Confidence: [N]% — **Gate contribution:** [PASS-eligible | BLOCKER/HIGH found]
 ```
 
 ## Notes

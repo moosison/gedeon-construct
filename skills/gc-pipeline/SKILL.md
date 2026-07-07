@@ -81,8 +81,8 @@ A structured pipeline for AI-assisted software development, from project incepti
 
 `/gc-execute` checks for the latest pre-flight review:
 
-- **≥ 90% confidence** and not Stop → proceed
-- **< 90%** or Stop → show blockers; user may update plan + re-run `/gc-preflight`, or explicitly override
+- **Gate: PASS** → proceed
+- **Gate: STOP** → show blockers; user may update plan + re-run `/gc-preflight`, or explicitly override
 - **No report** → recommend `/gc-preflight` first; user may override
 
 ## Command Handoffs
@@ -92,7 +92,7 @@ A structured pipeline for AI-assisted software development, from project incepti
 | `/gc-bootstrap` | *"Bootstrap complete. Run `/gc-discuss` to elicit requirements, or `/gc-plan` to plan directly."* |
 | `/gc-discuss` | *"Requirements captured. Run `/gc-plan`."* |
 | `/gc-plan` | *"Review the plan above. When approved, run `/gc-preflight`."* |
-| `/gc-preflight` | *"Confidence {N}%. Ready → `/gc-execute`; else → fix plan, `/gc-preflight` again."* |
+| `/gc-preflight` | *"Gate: {PASS|STOP} ({N}% display). PASS → `/gc-execute`; STOP → fix plan, `/gc-preflight` again."* |
 | `/gc-execute` | *"Execution complete. Run `/gc-review`."* |
 | `/gc-review` | Push if clean; then *"Run `/gc-eop` to close the pipeline."* |
 | `/gc-eop` | *"Pipeline complete. Session learnings captured."* (terminal) |
