@@ -19,6 +19,8 @@ Ask the user (if not provided):
 3. **Initial milestones** (optional) — rough phases, or "discover them later"
 4. **Team size** — solo (1 contributor), small (2–5), or full (5+). Used to set the branch strategy.
 
+> **Roadmapped enhancement (not yet implemented):** these four quick questions are planned to be superseded by real scope capture — complexity drivers, integrations, known unknowns, constraints, and whether the project needs parallel workstreams — feeding a time/cost estimate. See `Deep Scope Discovery & Project Estimation` in `.construct/ROADMAP.md`. Deliberately queued last: gated on the `Instrument Repairs` milestone and on external-project cost calibration.
+
 ### Step 2: Initialize Planning Tree
 
 Create the following files in the current directory:

@@ -116,6 +116,13 @@ Evidence validation before Step 4:
 - [ ] Every unknown listed explicitly
 - [ ] No unresolved contradictions
 
+### Step 3.5: Ledger Contradiction Check
+
+Run `node hooks/lib/ledger-cli.js pull` via Bash, piping the merged affected-files list (the union established in Step 3) as a JSON array on stdin **via a heredoc — never `echo`** (a single-quoted `echo` breaks on any embedded single-quote in an LLM-derived path). **Never pass the list as a `--scope` shell argument** — that was a real shell-injection architecture flaw caught in this plan's pre-flight review; the CLI deliberately only accepts this list via stdin now.
+
+- If the result is `[]`: append the literal line `Ledger check: 0 scope-intersecting fresh entries — nothing to verify.` to the Design Brief / evidence output. Do not dispatch an auditor for this — nothing to judge.
+- If the result is non-empty: dispatch a `gc-auditor`-typed agent (using its "Ledger Contradiction Judgment" duty in `agents/gc-auditor.md`) with the plan's stated premises plus the pulled ledger entries. If it reports a contradiction: apply the same **STOP, present to user, wait for resolution** handling as Step 3's Contradiction merge rule, before proceeding to Step 4.
+
 ### Step 4: Implementation Strategy
 
 Using merged evidence only:
@@ -149,6 +156,8 @@ Immediately after an atomic step states its insertion point and entry line in pr
 **Freshness-hash capture (structure/rendering assumptions):** Any atomic step that depends on a file's current structure or rendering assumption (per the paragraph above) must have its digest captured at plan-authoring time: run `node hooks/lib/plan-verifier-cli.js hash <file>` via Bash and record the result inline in the step's text as `**File hash at plan time:** {digest}`. This is what `/gc-execute`'s dispatch-time freshness check compares against later — a step without this line cannot be freshness-checked before execution.
 
 **Rename/move blast-radius sweep:** Any atomic step that renames or moves a file referenced by its literal filename elsewhere in the codebase must be preceded by a fresh, unconstrained repo-wide search for that filename — not a check limited to consumers a prior round already named. Re-run the same unconstrained search after each plan revision; a fix scoped only to previously-flagged consumers will miss new ones exactly as easily as the first pass did. Classify every hit as either in-scope (must update) or explicitly out-of-scope (name why — e.g. a destination-path reference vs. a source-path reference). This generalizes beyond filename renames: it applies to any atomic step that migrates a word, phrase, or vocabulary pattern across multiple files (e.g. renaming a concept, replacing a deprecated term, propagating a new signal name) — not filename renames alone. Re-run the same unconstrained repo-wide search after each plan revision for the migrated pattern itself, not just the previously-named consumer list.
+
+**Reused-primitive root-mismatch check:** Any atomic step that reuses an existing shared primitive (a path resolver, validator, or similar) for a call site whose input shape differs from the primitive's existing callers must state, explicitly in the step's text, what that call site's actual runtime input looks like (workspace-relative? absolute? living in a different root entirely?) — and verify it directly against the primitive's real signature/behavior before the step is finalized, not just cite the plan text describing the call. Citing "this reuses X" is not verification; running X against a representative real input for the new caller is. (A plan step once asserted `hashFile(path, cwd)` was safe to reuse for a new caller whose evidence file actually lived outside the workspace entirely — two full pre-flight rounds reviewing the plan's text missed it; only running the primitive against the real input at code-review time caught it.)
 
 ### Step 6: Verification (Definition of Done)
 
@@ -190,3 +199,4 @@ Confirm the plan is written, then propose preflight as Gedeon.
 - Vague atomic steps ("Fix bug", "Update module")
 - Complex steps without probe templates
 - Resolving contradictions silently without user visibility
+- Presenting `echo` as an equal alternative to a heredoc for piping any content that may contain LLM/file-influenced text to a shell-invoked command — a single-quoted `echo` breaks on an embedded quote; only a heredoc is safe for untrusted content

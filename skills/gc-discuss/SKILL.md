@@ -64,6 +64,7 @@ Group gray areas by type (UX, data model, API design, security, scope, performan
 Present the identified gray areas to the user. For each area:
 - State the question clearly
 - Offer 2-3 options where applicable (with trade-offs)
+- Give a recommended answer, listed first, so the user can confirm instead of generating one from scratch
 - Invite the user to decide or provide context
 
 Use a single `AskUserQuestion` prompt for the most critical gray areas rather than asking one at a time.

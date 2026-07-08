@@ -80,8 +80,11 @@ Synthesize the session's key codebase learnings (confirmed patterns, gotchas, ar
 ```markdown
 ### {ISO date} — {plan-slug}
 Stage: {stage reached} | Steps: {completed}/{total} | Blockers: {count}
+Gate: {ledger-sourced PASS|STOP, or "not available (no ledger entry)"}
 Summary: {one sentence of what was accomplished}
 ```
+
+**Sourcing the `Gate:` line (mechanical, additive — new capability, does not replace or remove `Stage:`/`Summary:`):** Run `node hooks/lib/ledger-cli.js pull` via Bash, piping the plan's affected-files list (the Design Brief's merged list from gc-plan Step 3) as a JSON array on stdin — never as a `--scope` shell argument. Filter the returned array to facts where `type === "gate-verdict"`; if more than one qualifies, take the one with the latest `verifiedAt`. Render its `verdict` (`true` → `PASS`, `false` → `STOP`) as this line's value. If the pull returns `[]`, or no `gate-verdict` fact survives the filter (ledger absent, or a pre-ledger-era session): render `Gate: not available (no ledger entry)`.
 
 If either section is absent from STATE.md, create it before appending.
 
@@ -104,8 +107,11 @@ Path: `.construct/phases/{plan-slug}/SUMMARY.md` — create the directory if abs
 
 **Completed:** {ISO date}
 **Outcome:** {one sentence — same as the Session History summary}
+**Gate:** {ledger-sourced PASS|STOP, or "not available (no ledger entry)"}
 **Stages reached:** {comma-separated list of pipeline stages completed this run}
 ```
+
+**Sourcing the `Gate:` field (mechanical, additive — new capability, does not replace or remove `Outcome:`):** Run `node hooks/lib/ledger-cli.js pull` via Bash, piping the plan's affected-files list (the Design Brief's merged list from gc-plan Step 3) as a JSON array on stdin — never as a `--scope` shell argument. Filter the returned array to facts where `type === "gate-verdict"`; if more than one qualifies, take the one with the latest `verifiedAt`. Render its `verdict` (`true` → `PASS`, `false` → `STOP`) as this field's value. If the pull returns `[]`, or no `gate-verdict` fact survives the filter (ledger absent, or a pre-ledger-era session): render `Gate: not available (no ledger entry)`.
 
 If `.construct/` does not exist in the current project (gc-new-project was never run), skip silently.
 
@@ -120,6 +126,11 @@ Produce a **session digest** — a compressed summary that bridges this session 
 - /gc-bootstrap: {outcome}
 - /gc-plan: {plan slug}
 - /gc-preflight: {Gate: PASS|STOP}, {confidence%} (display only), {run count}
+
+**Sourcing the Gate value on this line (mechanical, non-optional — replaces prose-extraction):** Run `node hooks/lib/ledger-cli.js pull` via Bash, piping the plan's affected-files list (the Design Brief's merged list from gc-plan Step 3) as a JSON array on stdin — never as a `--scope` shell argument. Filter the returned array to facts where `type === "gate-verdict"`; if more than one qualifies, take the one with the latest `verifiedAt`. Use that fact's `verdict` (`true` → `PASS`, `false` → `STOP`) as the authoritative value for `{Gate: PASS|STOP}` — do not derive it by reading the latest Pre-Flight-Review report's prose. This replaces the prior prose-extraction method, the exact spot implicated in a real incident where the digest read PASS while the actual report said STOP.
+
+If the pull returns `[]`, or no `gate-verdict` fact survives the filter (ledger absent, or a pre-ledger-era session): fall back to reading the latest Pre-Flight-Review report's `**Gate: PASS**`/`**Gate: STOP**` line directly, and append the literal string `(legacy-sourced — no matching ledger entry)` immediately after the rendered value, so a future `/gc-resume` can grep for it to distinguish ledger-backed digests from pre-migration ones.
+
 - /gc-execute: {outcome}
 - /gc-review: {verdict}
 

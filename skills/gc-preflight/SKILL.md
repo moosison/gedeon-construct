@@ -106,6 +106,7 @@ Carry every `{step}\tFAIL: {reason}` result forward into Step 3's merge.
 - For every atomic step carrying a `**Control-flow check at plan time:** {file}:{entryLine}:{insertionLine}` annotation: validate `<file>` the same charset way, and validate `entryLine`/`insertionLine` are pure non-negative integers (`^\d+$`) before interpolating either into a command. If either validation fails, record a mechanical-gate failure without invoking the CLI. Otherwise re-run `node hooks/lib/plan-verifier-cli.js check-control-flow <file> <entryLine> <insertionLine>`. Three possible outputs, three distinct handling rules: (1) `CLEAR` → passes. (2) A populated list of flagged risky lines → mechanical-gate failure for that step **unless** the plan step text already has an explicit resolution for every flagged line. (3) `UNRESOLVED: ...` → **always** a mechanical-gate failure, with no exception and no escape hatch — there are no flagged lines to resolve, so "resolved" can never legitimately apply.
 - If the plan's own affected-files list includes any `skills/gc-*/SKILL.md` or `agents/gc-*.md`: run `node hooks/lib/tier-consistency-check.js` from the workspace root and read its exit code — non-zero → mechanical-gate failure (tier drift).
 - Aggregate into a single `mechanicalGateStatus`: `CLEAR` only if citation verification (Step 2.5), every hash check, every control-flow check (with `UNRESOLVED` treated as failure, not as CLEAR), and (when run) tier-consistency all passed; otherwise `FAILED` with the list of specific failing checks.
+- **Non-skippable clause:** the Gate line (Step 4) must never render `PASS` on the strength of a prior round's remembered `mechanicalGateStatus`. These mechanical checks must be actually re-run in *this* preflight round before the Gate line is rendered — a cached `CLEAR` verdict from an earlier round is never a substitute for re-running Step 2.6 now.
 
 ### Step 3: Merge (Pessimistic)
 
@@ -143,6 +144,24 @@ Required sections:
 
 Section 1 (Confidence Dashboard) format contract: include a standalone line, exact format `**Gate: PASS**` or `**Gate: STOP**` (regex: `^\*\*Gate:\s*(PASS|STOP)\*\*`). **This line must appear exactly once, within Section 1 only.** If more than one line ever matches this pattern, consumers take the first occurrence within Section 1 and treat any other match elsewhere in the report as prose, never as the authoritative signal. Keep the existing `| **Overall Confidence** | **N%** |` table row, labeled "(display only — informational, never load-bearing for the Gate)". When Gate is STOP for mechanical reasons, list every mechanical-gate failure (Step 2.6) in Section 1 immediately below the Gate line, one per line, format: `- {check name}: {file} — {reason}`.
 
+**Mechanical fact write (non-optional):** Immediately after the Gate line renders, run `node hooks/lib/ledger-cli.js record` via Bash, piping the fact as JSON to stdin **via a heredoc — never `echo`**. A single-quoted `echo '{"claim":"...","evidenceFile":"..."}'` breaks (and executes) on any embedded single-quote in `claim`/`overrideReason`/`evidenceFile` content — content that is ultimately LLM/file-content-influenced — reopening the exact shell-trust-boundary this milestone's stdin-JSON redesign closed for the `--scope` argument, just at a different injection point:
+
+```json
+{
+  "type": "gate-verdict",
+  "claim": "Gate: {PASS|STOP} for plan {slug}",
+  "verdict": true,
+  "evidenceFile": "<this round's Pre-Flight-Review report path>",
+  "scope": ["<the merged affected-files list from Step 3>"],
+  "stage": "pre-flight",
+  "planSlug": "<plan slug>"
+}
+```
+
+`verdict` MUST be the unquoted JSON boolean `true` or `false` (`true` for `**Gate: PASS**`, `false` for `**Gate: STOP**`) — **never** a quoted string like `"true"`. `ledger-cli.js record` rejects a non-boolean `verdict` outright (exit 1, clear error) rather than silently accepting it, since a stringified verdict would otherwise pass JSON parsing but fail `qualifiesForGate` invisibly later.
+
+`evidenceFile` is a raw path, never a pre-computed hash — this instruction never states or computes a hash value itself; `ledger-cli.js record` computes `evidence.hash` internally via `hashFile(evidenceFile, cwd)` before appending. `sourceSession` is deliberately absent from this fact: `ledger-cli.js` is invoked here as a standalone CLI process, not as a Claude Code hook, so there is no session id to populate it with — this is a resolved design decision, not an oversight.
+
 ### Step 5: Present
 
 Paste the full Pre-Flight Dashboard in the conversation.
@@ -157,6 +176,22 @@ State outcome by Gate:
 **Stop status is advisory** — user may always update plan and re-run.
 
 When Gate is **STOP**: read `.construct/STATE.md`. If `## Error Counts` section is absent, create it with defaults (`gc-execute: 0`, `gc-preflight: 0`, `gc-bootstrap: 0`). Increment `gc-preflight` by 1. Write the updated section back with the Write tool. Note: this trigger now fires on any unresolved BLOCKER/HIGH finding or mechanical-gate failure, a broader condition than the prior "<70%" threshold — a plan that previously scored 75% ("Caution," no increment) with one HIGH finding now increments every time. This is intentional, not a silent behavior drift: a plan with any unresolved BLOCKER/HIGH finding should count toward the behavioral-gap threshold.
+
+**Override branch:** if the user explicitly confirms proceeding past a rendered `**Gate: STOP**` anyway, record the override as a second mechanical fact — run `node hooks/lib/ledger-cli.js record` via Bash, piping this JSON to stdin:
+
+```json
+{
+  "type": "gate-override",
+  "claim": "User overrode Gate: STOP for plan {slug}",
+  "verdict": true,
+  "evidenceFile": "<same Pre-Flight-Review path as this round's gate-verdict fact>",
+  "scope": ["<same merged affected-files list>"],
+  "stage": "pre-flight",
+  "overrideReason": "<the user's stated reason, or the literal string \"not stated\" if none given>"
+}
+```
+
+This write is in addition to, not instead of, the `gate-verdict` fact already recorded for this round.
 
 ## Iteration Loop
 

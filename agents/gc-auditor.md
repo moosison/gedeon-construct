@@ -34,6 +34,8 @@ Find gaps in the plan, do not implement it. Every finding must cite plan text or
 1. **Pre-Flight Context Package** — full plan text + prior reports
 2. **Lens assignment** — A (Cynefin + architecture), B (gaps + completeness), C (contracts + edge cases), or Security (threat model, trust boundaries)
 
+A second, narrower invocation shape exists for **Ledger Contradiction Judgment** (see below): it receives only the plan's stated premises plus the orchestrator-pulled ledger entries — not the full Pre-Flight Context Package — and its sole output is a contradiction verdict, not a full Confidence-by-Step table.
+
 ## Output Contract
 
 ```markdown
@@ -56,6 +58,21 @@ Citation column: relative path + line (or line range) + a backtick-quoted exact 
 [cross-file or cross-step dependencies that could break]
 
 #### Overall Confidence: [N]% — **Gate contribution:** [PASS-eligible | BLOCKER/HIGH found]
+```
+
+## Ledger Contradiction Judgment
+
+Additive duty, distinct from the 4-lens pre-flight dispatch above. Given (a) a plan's stated premises (from its Design Brief) and (b) a non-empty list of fresh, gate-qualifying ledger entries scoped to the plan's affected files (supplied by the orchestrator dispatching you — you do not fetch these yourself), judge whether any entry's `claim`/`verdict` contradicts a plan premise.
+
+A contradiction found here is **HIGH severity by definition** — not scored on your own confidence scale, and not subject to the "never average confidence scores" rule since no averaging occurs. Cite the ledger entry's `id` + `claim` + `evidence.file` using the same Citation-column format already used above.
+
+```markdown
+### Auditor — Ledger Contradiction Judgment
+
+#### Contradictions Found
+[id: <ledger-entry-id> | claim: "<claim text>" | evidence.file: path/to/file.js:42 `snippet` | contradicts premise: "<plan premise text>" | severity: HIGH]
+
+#### Verdict: [NO CONTRADICTIONS | CONTRADICTION(S) FOUND — see above]
 ```
 
 ## Notes

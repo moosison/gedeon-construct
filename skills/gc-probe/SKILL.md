@@ -17,6 +17,21 @@ Every assumption is an unvalidated hypothesis. Before it influences a decision, 
 2. **An explicit question** — ask the user when verification is not possible.
 3. **A stated risk** — if you must proceed, declare the assumption and its blast radius.
 
+**Mandatory ledger write for outcome (1) only:** the moment an assumption is converted to a verified fact, record it — the conversion is not complete until it is written. Run `node hooks/lib/ledger-cli.js record` via Bash, piping the fact as JSON to stdin **via a heredoc — never `echo`**. A single-quoted `echo '{"claim":"...",...}'` breaks (and executes) on any embedded single-quote in the assumption's `claim` text — content that is ultimately LLM/file-content-influenced — reopening the exact shell-trust-boundary this milestone's stdin-JSON redesign closed for the `--scope` argument, just at a different injection point:
+
+```json
+{
+  "type": "verified-fact",
+  "claim": "<the assumption's statement, unchanged whether confirmed or disproved>",
+  "verdict": true,
+  "evidenceFile": "<the file read/checked, if any — omit this field entirely when verification was via a command or state-check with no single file>",
+  "scope": ["<the file(s) involved, or [] if none>"],
+  "stage": "<the current pipeline stage, or the literal string \"adhoc\" outside an active pipeline stage>"
+}
+```
+
+`verdict` MUST be the unquoted JSON boolean `true` or `false` — **never** a quoted string. `ledger-cli.js record` rejects a non-boolean `verdict` outright rather than silently accepting it. A disproved assumption is still a verified fact — `verdict` must be `false` in that case, never hardcoded to `true`. Recording it with `verdict:false` is what lets a later plan's stated premise actually be contradicted by this fact (the mechanism `agents/gc-auditor.md`'s Ledger Contradiction Judgment duty depends on). If no file is involved, `scope` is `[]` and the fact is recorded as advisory-only — per the gate/advise derivation rule, a fact with empty `scope` never gates, only advises. This is intentional, not a gap. Outcomes (2) and (3) are not verified facts and are never recorded here.
+
 ## The Assumption Tax
 
 Assumptions compound. One wrong guess about file structure leads to a wrong import path, which leads to a broken build, which leads to a debugging spiral that costs more than the original probe would have.
