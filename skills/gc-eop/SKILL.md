@@ -23,6 +23,10 @@ model: sonnet
 //    Use ABSOLUTE path: {project.path}/.construct/brief-cache.json — derive
 //    {project.path} from the index.json entry (`path` field) already read in Step 2b.
 //    Skip Step 2c silently if .construct/ROADMAP.md does not exist.
+// 10. [Pattern]: Step 2d writes back the closed plan's milestone Status/Started/Completed
+//    fields in ROADMAP.md — the only mechanical write path for milestone lifecycle.
+//    Skip silently if the plan's scope doesn't map to a single milestone heading
+//    (e.g. an advisory/consult session, or work spanning multiple milestones).
 
 # End of Pipeline (EOP)
 
@@ -134,17 +138,20 @@ If the pull returns `[]`, or no `gate-verdict` fact survives the filter (ledger 
 - /gc-execute: {outcome}
 - /gc-review: {verdict}
 
+Since 2026-07-08's per-milestone cost bucket work, `currentSession.totals`/`elapsedSeconds` mean "since the current plan-slug became active," not strictly "since this OS session began" — they reset at a mid-session milestone transition (running milestone B right after milestone A without `/clear` or a fresh terminal) exactly as they do at a true session boundary. This is intentional: it makes "this session" a meaningful per-milestone number instead of conflating unrelated work in one long-running terminal session. See `.construct/phases/instrument-repairs-incl-per-milestone-cost-scoping/per-milestone-cost-scoping/per-milestone-cost-scoping-CONTEXT.md`'s 2026-07-08 addendum for the recorded decision.
+
 ### Session Usage
 Read `.construct/USAGE.json`'s `currentSession` object (fresh read — do not reuse earlier reads from this session). Render verbatim, with no arithmetic performed here:
 - Tokens: `{totals.totalTokens}` ({totals.inputTokens} in / {totals.outputTokens} out / {totals.cacheCreationTokens} cache-write / {totals.cacheReadTokens} cache-read)
 - Estimated cost: `${totals.estimatedCostUsd}` (formatted to 4 decimal places) — if `totals.unpriced` is `true`, append " (partial — one or more models below have no pricing entry; their tokens are real but excluded from this total)".
-- Elapsed: `{elapsedSeconds}` formatted as `Xm Ys`
+- Elapsed: `{elapsedSeconds}` formatted as `Xm Ys` (since the current milestone's plan-slug became active — may be shorter than true OS-session wall time if a mid-session milestone transition occurred; see the note above `### Session Usage`)
 - Optionally list `byModel` entries as supporting detail, one line per model. For any entry with `unpriced: true`, render its cost as "not tracked — no pricing entry" instead of `$0.0000`.
 - Caveat (always include, verbatim): "estimated — derived from session transcript data; excludes this closing message's own usage (recorded on the next Stop event, but not necessarily displayed anywhere until a later /gc-eop runs)."
 - Staleness (mechanical, additive — an explicit exception to this subsection's "no arithmetic" instruction above, since a timestamp delta is required here). Skip this bullet entirely if `currentSession.lastUpdatedAt` is `null` or absent (can happen if no parsed transcript line carried a valid timestamp) — do not attempt the arithmetic on a missing value. Otherwise:
   1. Get the actual current time via `date -u +%Y-%m-%dT%H:%M:%SZ` (Bash) — do not estimate "now" from context.
   2. Compute the gap in minutes between that and `currentSession.lastUpdatedAt` (the max *transcript-message* timestamp from the last successful Stop-hook write — not a wall-clock write time).
   3. If the gap exceeds 60 minutes, append: "⚠ USAGE.json last updated {N} minutes before this session closed. This is expected after a long subagent dispatch (e.g. `/gc-review`'s reviewer panel) or a multi-stage autonomous run — Stop events don't fire during blocking multi-subagent work. If no such stage ran recently, the Stop hook may not be firing correctly." Do not attempt to determine which case applies — state the gap and the known benign explanation as a fact, and let the user judge.
+- Milestone-scoped total: resolve the active plan-slug using this skill's own established fallback chain (`.claude/gc-pipeline.json`'s `slug` → `ARGUMENTS` → plan frontmatter `name:` → filename stem). If resolved, read `USAGE.json`'s `byPlanSlug[{resolved-slug}]` (may be absent — treat as a zero bucket, not an error) **and** add `currentSession.totals` if-and-only-if `currentSession.planSlug === {resolved-slug}` (the session being closed belongs to this same milestone — this is what includes the closing session's own tokens, since `byPlanSlug` alone only ever holds already-completed windows). Render "This milestone: {totalTokens} tokens, ${estimatedCostUsd} (formatted to 4 decimal places)" from the sum. If the slug doesn't resolve, and there is no matching bucket or matching `currentSession.planSlug`, omit this line silently — never render a zero or an error.
 
 If `.construct/USAGE.json` is absent or has no `currentSession`, render: "Session Usage: not yet tracked" and skip the rest of this subsection (the `### Session Usage` heading's content only — this does **not** apply to the `### DEBT.json Staleness` section below, which is a separate heading and always runs regardless of USAGE.json's presence).
 
@@ -209,6 +216,18 @@ Write `{project.path}/.construct/brief-cache.json` (absolute path — `{project.
 If the Step 2b entry has no `path` field (newly appended project not yet registered with a path): skip Step 2c silently.
 If `.construct/ROADMAP.md` does not exist: skip Step 2c silently.
 If `.construct/STATE.md` does not exist: set `blockers: "None"` and proceed to write the cache.
+
+### Step 2d: Update Milestone Status
+
+Reuse Step 2c's `ROADMAP.md` read. Identify the single `## Milestone:` heading whose scope this session's closed plan belongs to. If the plan's work doesn't map cleanly to exactly one milestone (an advisory/consult session, or work spanning multiple milestones): skip this step silently.
+
+Otherwise, for that milestone's `**Status:**` / `**Started:**` / `**Completed:**` fields:
+
+- If `Status` is already `Completed`: do not overwrite.
+- If this session's plan closes all of the milestone's remaining scope: set `Status: Completed`, `Completed: {ISO date}`; set `Started: {ISO date}` too if it was still `—`.
+- If scope remains (sub-items or phases not yet built): set `Status: In progress ({one-line note naming what shipped this session and what remains})`; set `Started: {ISO date}` if still `—`. Leave `Completed` as `—`.
+
+Write the updated `ROADMAP.md` back with the Edit tool.
 
 ---
 

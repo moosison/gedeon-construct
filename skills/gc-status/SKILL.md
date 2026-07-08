@@ -29,7 +29,7 @@ Extract from STATE.md:
 
 From ROADMAP.md: count `- [x]` (done) and total `- [` (all checkboxes).
 
-Also read `{path}/.construct/USAGE.json` if it exists. Extract `cumulative.sessions` and `cumulative.totals.estimatedCostUsd` for the Cost column below. Missing file → `—` for that row, not an error (matches this step's existing "missing STATE.md → N/A" convention). Note for the reader: this is `cumulative` only — it lags by the current session and folds in once that project's next session's first Stop event fires.
+Also read `{path}/.construct/USAGE.json` if it exists. Extract `cumulative.sessions` and `cumulative.totals.estimatedCostUsd` for the Cost column below. Missing file → `—` for that row, not an error (matches this step's existing "missing STATE.md → N/A" convention). Note for the reader: this is `cumulative` only — it lags only by the currently-open milestone's window; earlier milestones worked on in this same session (even without `/clear`) have already folded in.
 
 If a project path no longer exists or STATE.md is missing, show `N/A` for that row — do not error.
 

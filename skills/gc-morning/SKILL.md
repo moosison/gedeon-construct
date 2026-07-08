@@ -107,10 +107,18 @@ Once the user selects a project, perform the following read sequence silently:
                     extract `activeMilestone`, `milestoneProgress`, `blockers` from live reads
 
 2. Read `{project.path}/.claude/gc-pipeline.json`  ← ALWAYS, fresh at render time
-   extract: `stage` (for Pipeline stage field + Next recommended action derivation)
+   extract: `stage` (for Pipeline stage field + Next recommended action derivation), `updatedAt` (for the Tracking Health Check below)
 
 3. `git rev-parse --abbrev-ref HEAD`  ← ALWAYS runtime
    extract: current branch
+
+### Tracking Health Check
+
+Only run this check if `.claude/gc-pipeline.json`'s `stage` (from read sequence item 2, already fresh) is exactly `"eop"` — this anchors the check to gc-eop's own start-of-skill write (`updatedAt` on that same read), functionally close to session end since gc-eop is the terminal stage. If `stage` is anything else, no clean anchor exists — skip this subsection silently.
+
+Read `{project.path}/.construct/USAGE.json`. If absent, or present but `currentSession.lastUpdatedAt` is null/absent, skip the USAGE.json half silently. Otherwise compute the SIGNED gap in minutes: `(updatedAt − currentSession.lastUpdatedAt)`, using the `updatedAt` value from read sequence item 2. A negative gap (Stop fired during gc-eop's own turns, after its start-of-skill write) never exceeds the threshold and produces no warning. If the gap exceeds 60 minutes, record: "⚠ USAGE.json's tracking froze {N} minutes before the prior session actually closed. Expected only if the session's final stretch was a long subagent dispatch (e.g. `/gc-review`'s reviewer panel); otherwise the Stop hook may not have fired correctly near close."
+
+Read `{project.path}/.construct/DEBT.json`. If absent, or present but has no `scannedAt`, skip the DEBT.json half silently. Otherwise compute the same signed gap using `scannedAt` in place of `currentSession.lastUpdatedAt`. If the gap exceeds 60 minutes, record the same-shaped warning with "DEBT.json"/"scannedAt" substituted in.
 
 Then deliver the full mission brief:
 
@@ -126,6 +134,7 @@ Then deliver the full mission brief:
 **Rationale:** [one sentence]
 
 **Unresolved gaps:** [blockers from cache/live read, or "None — clear to proceed"]
+**Tracking health:** [any recorded warning(s) from the Tracking Health Check, or omit this line entirely if none fired]
 ```
 
 Close with one line that signals readiness:
@@ -142,3 +151,4 @@ Close with one line that signals readiness:
 - Never recommend an action you haven't verified is the actual next pipeline step
 - Never address the user by name unless their name appears in the registry or memory
 - Never read config.json, ROADMAP.md, or STATE.md in Step 2 — those reads happen in Step 4 only, after project selection
+- Never run the Tracking Health Check in Step 2 or against wall-clock "now" — Step 4 only, and only anchored against gc-eop's own start-of-skill updatedAt
