@@ -141,8 +141,21 @@ Read `.construct/USAGE.json`'s `currentSession` object (fresh read — do not re
 - Elapsed: `{elapsedSeconds}` formatted as `Xm Ys`
 - Optionally list `byModel` entries as supporting detail, one line per model. For any entry with `unpriced: true`, render its cost as "not tracked — no pricing entry" instead of `$0.0000`.
 - Caveat (always include, verbatim): "estimated — derived from session transcript data; excludes this closing message's own usage (recorded on the next Stop event, but not necessarily displayed anywhere until a later /gc-eop runs)."
+- Staleness (mechanical, additive — an explicit exception to this subsection's "no arithmetic" instruction above, since a timestamp delta is required here). Skip this bullet entirely if `currentSession.lastUpdatedAt` is `null` or absent (can happen if no parsed transcript line carried a valid timestamp) — do not attempt the arithmetic on a missing value. Otherwise:
+  1. Get the actual current time via `date -u +%Y-%m-%dT%H:%M:%SZ` (Bash) — do not estimate "now" from context.
+  2. Compute the gap in minutes between that and `currentSession.lastUpdatedAt` (the max *transcript-message* timestamp from the last successful Stop-hook write — not a wall-clock write time).
+  3. If the gap exceeds 60 minutes, append: "⚠ USAGE.json last updated {N} minutes before this session closed. This is expected after a long subagent dispatch (e.g. `/gc-review`'s reviewer panel) or a multi-stage autonomous run — Stop events don't fire during blocking multi-subagent work. If no such stage ran recently, the Stop hook may not be firing correctly." Do not attempt to determine which case applies — state the gap and the known benign explanation as a fact, and let the user judge.
 
-If `.construct/USAGE.json` is absent or has no `currentSession`, render: "Session Usage: not yet tracked" and skip the rest of this subsection.
+If `.construct/USAGE.json` is absent or has no `currentSession`, render: "Session Usage: not yet tracked" and skip the rest of this subsection (the `### Session Usage` heading's content only — this does **not** apply to the `### DEBT.json Staleness` section below, which is a separate heading and always runs regardless of USAGE.json's presence).
+
+### DEBT.json Staleness
+
+Runs unconditionally, independent of the `### Session Usage` section above and regardless of whether `USAGE.json` exists — `debt-tracker.js` writes `DEBT.json` unconditionally while `usage-tracker.js` returns early if `.construct` is absent, so the two files can diverge, and this check must not be gated on USAGE.json's presence.
+
+If `.construct/DEBT.json` does not exist, skip silently. If it exists but has no `scannedAt` field, also skip silently (defensive — should not happen in practice). Otherwise:
+1. Get the current time via `date -u +%Y-%m-%dT%H:%M:%SZ` (Bash).
+2. Compute the gap in minutes against `scannedAt` (a wall-clock write time — a different kind of timestamp than `currentSession.lastUpdatedAt` above, but the same 60-minute threshold applies).
+3. If the gap exceeds 60 minutes, append: "⚠ DEBT.json last updated {N} minutes before this session closed. This is expected after a long subagent dispatch (e.g. `/gc-review`'s reviewer panel) or a multi-stage autonomous run — Stop events don't fire during blocking multi-subagent work. If no such stage ran recently, the Stop hook may not be firing correctly." (Same message shape as the USAGE.json check above, with "DEBT.json" in place of "USAGE.json" — `scannedAt` is the field being read, not text that appears in the rendered message.)
 
 ### Key decisions made
 - {decision 1}
