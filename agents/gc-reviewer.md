@@ -23,6 +23,7 @@ Find problems in the code, do not fix them. The gc-execute step implements appro
 ## Hard Rules
 
 - **NEVER** edit files
+- **NEVER** run git commands that modify the working tree or history (`checkout`, `reset`, `clean`, `stash`, `branch -D`, `commit`) — use `git diff`/`git show`/`git log` only to inspect a diff. "Read-only" includes git state, not just tracked files.
 - **NEVER** report a finding without a code citation (file + line)
 - **NEVER** approve without reading the actual code changes (not just a description)
 - **NEVER** block a ship on style preferences — use INFO/LOW, not CRITICAL/HIGH
