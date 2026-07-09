@@ -109,6 +109,22 @@ A "track" = one atomic step + its verification criterion + its freshness-hash + 
 
 **Wait** for all agents in a wave to finish before starting the next wave.
 
+#### Fable-5 Complex-Step Consult
+
+When an executor reaches a Cynefin-Complex step and runs its mandatory probe (line 96), the orchestrator tracks whether this is the **first** Complex step encountered so far in this plan's execution, in-session. **`// lean: in-session tracking only; upgrade path is a ledger fact if cross-session Complex-step tracking is ever needed.`** (Textual-only marker — not visible to `/gc-debt`, per `hooks/lib/debt-tracker.js`'s deliberate `.js`-only scope; disclosed, not a defect.) This counter resets on a `gc-resume`-driven reopen of this plan — a resumed plan's first Complex step after reopen is treated as free again; an accepted consequence of the disclosed in-session-only ceiling. If two or more executors in the same wave reach a Complex step's probe concurrently, "first" is resolved by the steps' order in the plan's todo sequence, not by executor response-arrival order.
+
+**First Complex step in this plan:** apply the Availability & Fallback Contract (`agents/gc-fable5-advisor.md`). If available, dispatch per the table below:
+
+| Consult dispatch | Model | Agent file | Duty |
+| --- | --- | --- | --- |
+| **Fable-5 consult** | `fable` | `agents/gc-fable5-advisor.md` | Complex-Step Consult |
+
+with the step's text, its probe's Method/Sensing/Acceptance-criteria, and the probe's actual result. Present its `proceed`/`adjust`/`abort` recommendation alongside — never in place of — the existing mandatory human pause at that step (line 108's condition (b) fires exactly as it does today, regardless of the recommendation).
+
+**Second and later Complex steps in the same plan:** do not auto-consult. At that step's mandatory pause, ask the user whether they want a Fable-5 consult before deciding. If yes, apply the Contract and dispatch per the table above. If no, the pause proceeds exactly as today.
+
+If unavailable at any consult point (date past 2026-07-12, or dispatch fails per the Contract's retry rule): render `⚠ Fable-5 unavailable — falling back to pause-without-consult ({reason})` and proceed straight to the existing mandatory pause.
+
 #### Behavioral Gap Tracking
 
 When a step fails **and requires a revised approach** (the original approach was wrong, not just a missing dependency or transient error):
