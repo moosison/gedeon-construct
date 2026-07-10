@@ -57,7 +57,7 @@ Payments: ██░░░░░░░░  20%  (1/5 phases)
 ```
 
 If `.construct/USAGE.json` exists, render one line after the milestone bars:
-`💰 Cumulative usage: {cumulative.sessions} sessions, ${cumulative.totals.estimatedCostUsd}` — followed by a caveat: "lags only by the currently-open milestone's window — earlier milestones in this session have already folded in." If `cumulative.totals.unpriced` is `true`, append a second caveat: "partial — excludes tokens from one or more models with no pricing entry." Omit the line entirely if the file doesn't exist.
+`💰 Cumulative usage: {cumulative.sessions} sessions, ${cumulative.totals.estimatedCostUsd}` — the total is live and current as of the most recent Stop event from any session, including any currently-open milestone window. If `cumulative.totals.unpriced` is `true`, append a caveat: "partial — excludes tokens from one or more models with no pricing entry." Omit the line entirely if the file doesn't exist.
 
 ### Step 4: Next Action
 

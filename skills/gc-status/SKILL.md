@@ -29,7 +29,7 @@ Extract from STATE.md:
 
 From ROADMAP.md: count `- [x]` (done) and total `- [` (all checkboxes).
 
-Also read `{path}/.construct/USAGE.json` if it exists. Extract `cumulative.sessions` and `cumulative.totals.estimatedCostUsd` for the Cost column below. Missing file → `—` for that row, not an error (matches this step's existing "missing STATE.md → N/A" convention). Note for the reader: this is `cumulative` only — it lags only by the currently-open milestone's window; earlier milestones worked on in this same session (even without `/clear`) have already folded in.
+Also read `{path}/.construct/USAGE.json` if it exists. Extract `cumulative.sessions` and `cumulative.totals.estimatedCostUsd` for the Cost column below. Missing file → `—` for that row, not an error (matches this step's existing "missing STATE.md → N/A" convention). Note for the reader: `cumulative` is a live view — it is current as of the most recent Stop event from any session, including any currently-open milestone window.
 
 If a project path no longer exists or STATE.md is missing, show `N/A` for that row — do not error.
 
@@ -60,7 +60,7 @@ If a project path no longer exists or STATE.md is missing, show `N/A` for that r
 
 #### Cumulative cost column:
 - Format as `💰 {sessions} · ${estimatedCostUsd}` (4 decimal places), or `—` if `.construct/USAGE.json` doesn't exist for that project. If `cumulative.totals.unpriced` is `true`, append `*` to the figure and add a one-line footnote below the table: "`*` partial — excludes tokens from unpriced models."
-- This is `cumulative` only — it lags by the current session (see Step 2 note)
+- This is `cumulative` only — a live view, current as of the most recent Stop event from any session (see Step 2 note)
 
 #### Output table:
 
