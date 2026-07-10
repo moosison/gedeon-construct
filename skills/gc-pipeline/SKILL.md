@@ -100,3 +100,7 @@ A structured pipeline for AI-assisted software development, from project incepti
 ## Pipeline State
 
 Stage skills write `{"stage":"<name>","slug":"<plan-slug>","updatedAt":"<ISO timestamp>"}` to `.claude/gc-pipeline.json` in the project root. The `slug` field is optional in legacy/pre-t1–t5 states. All five pipeline writers derive slug from the plan filename stem (`{slug}.plan.md` → strip `.plan.md`) — confirmed by the plan `name:` frontmatter when present. **Slug identity invariant:** `feature-slug` at gc-plan birth = plan filename stem = plan `name:` frontmatter = gc-pipeline.json `slug` = artifact filename prefixes. These must remain equal — gc-resume's artifact ladder depends on this. Informational only — does not gate execution.
+
+## Skill Freshness (Long or Resumed Sessions)
+
+gc-* skill files can be updated between invocations within the same long-running or resumed session. Before relying on a specific skill's detailed behavior (Gate thresholds, report formats, auditor rosters, verification steps) after a multi-day gap or context compaction, re-invoke the skill (or re-read its SKILL.md) rather than trusting a remembered or summarized description from earlier in the session. A compacted summary describes what a skill did at invocation time — not necessarily what it currently does.
