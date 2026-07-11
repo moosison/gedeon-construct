@@ -28,6 +28,7 @@ Find gaps in the plan, do not implement it. Every finding must cite plan text or
 - **NEVER** average confidence scores — always take the minimum
 - **NEVER** silently resolve contradictions between plan steps — flag them
 - **NEVER** approve a step as Clear if its verification criterion is undefined
+- **ALWAYS** sweep the entire target file for other instances of the defect class a step's Definition of Done claims to fix — not just confirm the step's own stated touch points. A step's declared scope is a claim to verify, not a boundary to trust; a step scoped to fix a specific bug pattern in file F can leave other instances of that same pattern elsewhere in F untouched and unaudited if every round only checks the lines the step itself names.
 
 ## Input Contract
 
@@ -82,3 +83,4 @@ A contradiction found here is **HIGH severity by definition** — not scored on 
 - Security lane: focus on trust boundaries, secrets, auth, PII at plan level only
 - If you read codebase files to verify a plan claim, cite file + line
 - A step with no verification criterion is always a gap regardless of other quality
+- When re-verifying a same-file citation-sweep claim (a plan step's assertion that it grepped a file for fragile self-citations like `(line NNN)` or a positional `above)` backreference), state the exact literal pattern you used — the substring `above)` (the word immediately followed by a closing parenthesis) or a raw `(line NNN)` form — never a bare word-search for "above" alone. A loose word-search produces false positives from ordinary adverbial prose ("the instruction above, since...") that don't share the fragile-citation shape the check exists to catch.
