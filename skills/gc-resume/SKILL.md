@@ -26,8 +26,8 @@ model: sonnet
 ### Step 1: Detect Active Plan
 
 1. Read `.claude/gc-pipeline.json`. If absent or corrupt → note "pipeline state unavailable"; proceed with inference only. **Bootstrap short-circuit:** if stage is `bootstrap`, no plan file exists yet — ask: *"Pipeline is at bootstrap stage — no plan written yet. Start a new plan?"* and dispatch gc-plan on confirmation. Skip remaining steps.
-2. If `slug` field is present → verify `~/.claude/gedeon/plans/{slug}.plan.md` exists on disk. If found, use this slug directly and skip steps 3–5. If the file does not exist (stale slug from a renamed or deleted plan), fall through to steps 3–5.
-3. Glob `~/.claude/gedeon/plans/*.plan.md`.
+2. If `slug` field is present → resolve `{project-slug}` per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, `~/.claude/skills/gc-plan/SKILL.md` — steps 1-3), then check both layouts per step 6's namespaced-first/legacy-flat-fallback order: `~/.claude/gedeon/plans/{project-slug}/{slug}.plan.md` first, then `~/.claude/gedeon/plans/{slug}.plan.md`. If either resolves, use this slug directly and skip steps 3–5. Only if **neither** layout has the file (stale slug from a renamed or deleted plan) fall through to steps 3–5. (Step 7's duplicate-layout precedence rule does not apply to this single-known-slug check — it's scoped to discovery consumers only: a check against one already-known slug, not a discovery/glob operation.)
+3. Glob both layouts: `~/.claude/gedeon/plans/*.plan.md` (legacy flat) and `~/.claude/gedeon/plans/*/*.plan.md` (namespaced, one level) — union both result sets before item 4's workspace-match filter. Apply the canonical procedure's duplicate-layout precedence rule (the gc-plan skill's Step 7, `~/.claude/skills/gc-plan/SKILL.md`, item 7): if the same slug appears in both sets, keep only the namespaced entry.
 4. Filter by workspace match: read each plan's frontmatter. Try YAML `workspace:` field; fall back to prose `**Workspace:**` pattern. Normalize before comparing: **lowercase both paths, replace all `\` with `/`, strip trailing `/`**.
 5. From workspace-matched plans, exclude any where a `{slug}-session-digest_*.md` artifact exists → pipeline already closed.
 6. If multiple non-closed candidates remain → sort by mtime, newest is active.
@@ -52,6 +52,8 @@ Two sources drive reconciliation — index.json exists but is too coarse for pla
 | absent / unrecognized | → fall through to artifact ladder |
 
 **Artifact ladder (when gc-pipeline.json is stale or absent):**
+
+All patterns in this table resolve relative to the plan's own resolved `{plan-dir}` (wherever its `{slug}.plan.md` was actually found in Step 1 — flat or namespaced) — never assume the flat root.
 
 | Newest artifact present (mtime) | Inferred dispatch |
 |----------------------------------|-------------------|

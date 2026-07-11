@@ -173,7 +173,19 @@ Immediately after an atomic step states its insertion point and entry line in pr
 
 ### Step 7: Write and Present the Plan
 
-Write to: `~/.claude/gedeon/plans/{feature-slug}.plan.md`
+#### Project-Slug & Plan-Directory Resolution Procedure (canonical — referenced by name from e.g. gc-preflight, gc-execute, gc-review, gc-eop, gc-lean, gc-resume, and gc-ship; do not duplicate this text elsewhere, reference this heading instead)
+
+1. Read `.construct/config.json`. If the file is absent, unreadable, or malformed → `{project-slug}` is **unavailable**; skip to step 4.
+2. Else extract slug: `config.slug` (new format) or `config.project` (old format — mirrors `gc-bootstrap` Step 0's own dual-format read). If neither key is present → `{project-slug}` is **unavailable**; skip to step 4.
+3. Sanitize the extracted value: reject it (treat identically to "unavailable") if it is empty or whitespace-only, or if it contains `..`, `/`, `\`, or matches an absolute-path/drive-letter form (e.g. `^[A-Za-z]:` or a leading path separator). A rejected, empty, or missing slug never reaches path construction.
+4. **If `{project-slug}` is unavailable:** this invocation uses the legacy-flat form only — `{plan-dir}` = `~/.claude/gedeon/plans/` (plan-store root). This is not an error; it is the defined fallback for a workspace with no valid project config.
+5. **If `{project-slug}` is available:** new plans always target `{plan-dir}` = `~/.claude/gedeon/plans/{project-slug}/` — no existence check needed for this branch, since a brand-new plan-slug never already exists at that path. (Downstream consumers resolving an **existing** plan-run — e.g. gc-preflight, gc-execute, gc-review, gc-eop, gc-lean, gc-resume, gc-ship — use step 6 below instead, which does check for existence; see each skill's own Step 1/first-touch text.)
+6. Downstream consumers resolving an existing plan-run: check the namespaced path `~/.claude/gedeon/plans/{project-slug}/{plan-slug}.plan.md` first; if absent, fall back to the legacy-flat `~/.claude/gedeon/plans/{plan-slug}.plan.md`. Whichever resolves is `{plan-dir}` for every artifact-ladder read/write in that invocation — a plan's whole artifact ladder always lives together, never split.
+7. **Duplicate-layout precedence:** if a downstream consumer's discovery step (see gc-resume/gc-ship) finds the *same* feature-slug present in **both** the namespaced and legacy-flat locations simultaneously, the namespaced copy wins deterministically; surface a one-line advisory to the user rather than silently picking by mtime.
+
+Write new plans per steps 4/5 above — never flat when a valid `{project-slug}` is available.
+
+Write to: `{plan-dir}/{feature-slug}.plan.md`
 
 The plan file **must** open with a YAML frontmatter block — this is the machine-readable schema gc-resume and pipeline writers depend on:
 

@@ -36,7 +36,7 @@ model: opus
 
 ### Step 2: Code Review Context Package
 
-Read the original plan file from disk if available.
+Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, ~/.claude/skills/gc-plan/SKILL.md — steps 1-3 for {project-slug}, step 6 for {plan-dir}; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here). Read the plan from {plan-dir}/{plan-slug}.plan.md if available.
 
 ```markdown
 ## Code Review Context Package: {plan-slug}
@@ -128,7 +128,7 @@ Do NOT approve push if any check fails.
 
 ### Step 7: Write and Present
 
-Path: `~/.claude/gedeon/plans/{plan-slug}-Code_Review_{YYYY-MM-DD_HHMM}.md`
+Path: `{plan-dir}/{plan-slug}-Code_Review_{YYYY-MM-DD_HHMM}.md`
 
 Sections: Summary (reviewers + lenses), Downstream Impact, Findings & Fixes (with Flagged By column), Reviewer Disagreements, Verification Gate table.
 

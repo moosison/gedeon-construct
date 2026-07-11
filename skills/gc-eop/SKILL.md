@@ -181,7 +181,9 @@ If `.construct/DEBT.json` does not exist, skip silently. If it exists but has no
 - {anything unresolved, deferred, or flagged for next session}
 ```
 
-Write to: `~/.claude/gedeon/plans/{slug}-session-digest_{YYYY-MM-DD_HHMM}.md`
+Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, ~/.claude/skills/gc-plan/SKILL.md — steps 1-3 for {project-slug}, step 6 for {plan-dir}; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here).
+
+Write to: `{plan-dir}/{slug}-session-digest_{YYYY-MM-DD_HHMM}.md`
 
 ### Step 2b: Update Project Index with Closed Status
 
@@ -260,7 +262,7 @@ After the behavioral gap gate resolves (gc-correct complete or skipped), handle 
    - Run `git remote -v`. If output is empty → git repo with no remote configured.
 
 2. **If git repo exists and uncommitted changes exist:**
-   - **Resolve plan-slug:** Read from `.claude/gc-pipeline.json` `slug` field (written by gc-plan or gc-execute). Fallback: plan frontmatter `name:` field. Fallback: filename stem of the active plan file. Validate slug matches `[a-z0-9][a-z0-9._-]*`. If unresolvable or invalid: skip branch creation, commit to current branch, set push-target = current branch, note *"No valid plan slug resolved — committed to current branch."*
+   - **Resolve plan-slug:** Read from `.claude/gc-pipeline.json` `slug` field (written by gc-plan or gc-execute). Fallback: plan frontmatter `name:` field. Fallback: filename stem of the active plan file. This fallback reuses the same `{plan-dir}` already resolved at Step 2 in this invocation — never re-resolves or re-derives it independently. Validate slug matches `[a-z0-9][a-z0-9._-]*`. If unresolvable or invalid: skip branch creation, commit to current branch, set push-target = current branch, note *"No valid plan slug resolved — committed to current branch."*
      **Staleness check (before trusting a syntactically valid gc-pipeline.json slug):** if this session ran no `/gc-plan` and no `/gc-execute` (no new plan file authored, no execution occurred this session), the slug inherited from `gc-pipeline.json` may name a prior, already-completed milestone unrelated to this session's actual work — validating syntax alone does not catch this. In that case, do not reuse it silently: derive a fresh, short, kebab-case slug (matching the same `[a-z0-9][a-z0-9._-]*` pattern) describing this session's actual work, and state which slug was used and why before proceeding to branch creation.
    - **If slug is valid — check branch first** (check-then-act): run `git rev-parse --verify feature/{plan-slug}`.
      - If the check succeeds (branch exists): `git checkout feature/{plan-slug}`; push-target = `feature/{plan-slug}`

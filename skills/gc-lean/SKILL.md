@@ -32,7 +32,7 @@ Stop at the first rung that fires:
 
 ### Step 1: Load Plan
 
-Identify the plan to review from the argument (e.g. `/gc-lean gc-lean-integration`), pipeline state at `.claude/gc-pipeline.json`, or the plan named in the conversation. Read the plan file from `~/.claude/gedeon/plans/{slug}.plan.md`. Extract all atomic steps.
+Identify the plan to review from the argument (e.g. `/gc-lean gc-lean-integration`), pipeline state at `.claude/gc-pipeline.json`, or the plan named in the conversation. Resolve `{plan-dir}` per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, `~/.claude/skills/gc-plan/SKILL.md` — steps 1-3 for `{project-slug}`, step 6 for `{plan-dir}`; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here). Read the plan file from `{plan-dir}/{slug}.plan.md`. Extract all atomic steps.
 
 If the plan contains 0 atomic steps (empty todos list), output: `"Plan has no atomic steps — lean review deferred until steps are drafted. Verdict: DEFER."` Do not produce a verdict table or lean score.
 

@@ -25,6 +25,8 @@ model: sonnet
 
 ### Step 1: Load Context
 
+Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, ~/.claude/skills/gc-plan/SKILL.md — steps 1-3 for {project-slug}, step 6 for {plan-dir}; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here). Read the plan and the latest pre-flight report from {plan-dir}.
+
 Read from disk:
 1. **Full plan file** (YAML frontmatter + entire body)
 2. **Latest pre-flight report** — newest `*-Pre-Flight-Review_*.md` for this plan slug
@@ -105,7 +107,7 @@ A "track" = one atomic step + its verification criterion + its freshness-hash + 
 
 #### Verification Rung Ladder
 
-Before emitting the Closed-loop verification signal (line 97 above), determine the highest **rung** this step can legitimately reach. This is a distinct concept from `gc-lean-auditor`'s unrelated "7-Rung" YAGNI-complexity ladder used earlier in `/gc-preflight` — same word, different pipeline stage, different meaning; do not conflate the two. Rung selection is also orthogonal to Track Verification (the file-hash/control-flow staleness checks above) — a rung is about how convincingly a step's own change was verified; Track Verification is about whether the plan's premises about a file are still fresh. A rung downgrade is a normal, benign outcome; a Track Verification mismatch remains a hard pre-execution blocker exactly as today, regardless of rung.
+Before emitting the Closed-loop verification signal (the Closed-loop verification bullet in Step 4's executor list, above), determine the highest **rung** this step can legitimately reach. This is a distinct concept from `gc-lean-auditor`'s unrelated "7-Rung" YAGNI-complexity ladder used earlier in `/gc-preflight` — same word, different pipeline stage, different meaning; do not conflate the two. Rung selection is also orthogonal to Track Verification (the file-hash/control-flow staleness checks above) — a rung is about how convincingly a step's own change was verified; Track Verification is about whether the plan's premises about a file are still fresh. A rung downgrade is a normal, benign outcome; a Track Verification mismatch remains a hard pre-execution blocker exactly as today, regardless of rung.
 
 **Applicability gate (check first):** does this step's Definition of Done describe a runtime-observable flow (a UI interaction, an API call, a running process) to drive? If not — e.g. a documentation edit, a skill-prose change, a pure data-transform with no execution path in this session — the ceiling rung is **typecheck/lint**, or **file-exists** if no typecheck/lint applies either. Do not attempt behavioral verification on a step with no runtime surface; this is over-reach, the inverse failure of the under-reach this ladder exists to fix.
 
@@ -115,7 +117,7 @@ Before emitting the Closed-loop verification signal (line 97 above), determine t
 3. **Typecheck/lint** (`typecheck`) — run the project's typecheck or lint command and observe a clean result.
 4. **File-exists** (`file-exists`) — confirm the target file exists and contains the expected change; the floor rung, unchanged from today's baseline.
 
-If the highest applicable rung's tool is unavailable this session: render `⚠ {rung} unavailable — falling back to {next rung} ({reason})` and proceed at the next rung down. This fallback triggers only on tool/method **unavailability** — never on a negative result from a rung that *was* attempted. A negative signal at any attempted rung is a failed Closed-loop verification signal (line 97) and, under `--auto`, fires condition (a) below exactly as today; it is not a rung downgrade. Report the rung actually reached alongside the verification signal (Output Contract, `agents/gc-executor.md`) — surfaced in both the in-conversation todo status table and the written execution-outcome file (Step 6).
+If the highest applicable rung's tool is unavailable this session: render `⚠ {rung} unavailable — falling back to {next rung} ({reason})` and proceed at the next rung down. This fallback triggers only on tool/method **unavailability** — never on a negative result from a rung that *was* attempted. A negative signal at any attempted rung is a failed Closed-loop verification signal (the Closed-loop verification bullet in Step 4's executor list, above) and, under `--auto`, fires condition (a) below exactly as today; it is not a rung downgrade. Report the rung actually reached alongside the verification signal (Output Contract, `agents/gc-executor.md`) — surfaced in both the in-conversation todo status table and the written execution-outcome file (Step 6).
 
 #### Auto-Mode Human-In-Loop Triggers
 
@@ -125,7 +127,7 @@ If the highest applicable rung's tool is unavailable this session: render `⚠ {
 
 #### Fable-5 Complex-Step Consult
 
-When an executor reaches a Cynefin-Complex step and runs its mandatory probe (line 96), the orchestrator tracks whether this is the **first** Complex step encountered so far in this plan's execution, in-session. **`// lean: in-session tracking only; upgrade path is a ledger fact if cross-session Complex-step tracking is ever needed.`** (Textual-only marker — not visible to `/gc-debt`, per `hooks/lib/debt-tracker.js`'s deliberate `.js`-only scope; disclosed, not a defect.) This counter resets on a `gc-resume`-driven reopen of this plan — a resumed plan's first Complex step after reopen is treated as free again; an accepted consequence of the disclosed in-session-only ceiling. If two or more executors in the same wave reach a Complex step's probe concurrently, "first" is resolved by the steps' order in the plan's todo sequence, not by executor response-arrival order.
+When an executor reaches a Cynefin-Complex step and runs its mandatory probe (the Complex-steps bullet in Step 4's executor list, above), the orchestrator tracks whether this is the **first** Complex step encountered so far in this plan's execution, in-session. **`// lean: in-session tracking only; upgrade path is a ledger fact if cross-session Complex-step tracking is ever needed.`** (Textual-only marker — not visible to `/gc-debt`, per `hooks/lib/debt-tracker.js`'s deliberate `.js`-only scope; disclosed, not a defect.) This counter resets on a `gc-resume`-driven reopen of this plan — a resumed plan's first Complex step after reopen is treated as free again; an accepted consequence of the disclosed in-session-only ceiling. If two or more executors in the same wave reach a Complex step's probe concurrently, "first" is resolved by the steps' order in the plan's todo sequence, not by executor response-arrival order.
 
 **First Complex step in this plan:** apply the Availability & Fallback Contract (`agents/gc-fable5-advisor.md`). If available, dispatch per the table below:
 
@@ -149,11 +151,11 @@ When a step fails **and requires a revised approach** (the original approach was
 
 ### Step 5: Sync Plan Todos
 
-After all waves complete, ensure `~/.claude/gedeon/plans/{slug}.plan.md` frontmatter reflects actual todo statuses from execution.
+After all waves complete, ensure `{plan-dir}/{slug}.plan.md` frontmatter reflects actual todo statuses from execution.
 
 ### Step 6: Present
 
-Write `~/.claude/gedeon/plans/{slug}-execution-outcome_{YYYY-MM-DD_HHMM}.md` (todo table, verification signals and rung reached per step, commits, blockers, next steps).
+Write `{plan-dir}/{slug}-execution-outcome_{YYYY-MM-DD_HHMM}.md` (todo table, verification signals and rung reached per step, commits, blockers, next steps).
 
 Present **todo status table** in conversation, including each step's rung reached.
 
