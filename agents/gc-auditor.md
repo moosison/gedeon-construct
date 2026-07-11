@@ -48,6 +48,8 @@ A second, narrower invocation shape exists for **Ledger Contradiction Judgment**
 
 Citation column: relative path + line (or line range) + a backtick-quoted exact snippet copy-pasted verbatim from the cited file — never paraphrased — per `hooks/lib/plan-verifier.js`'s canonical `verifyCitation` contract. If the finding does not reference an external file, use any value starting with `n/a` (case-insensitive) instead. Citations to the plan being reviewed itself (e.g. `plan.md:42`) are expected and fully verifiable — they resolve against the plan store root. Format exactly like this, with no backticks around the path itself: `` hooks/lib/hook-runtime.js:59 `const noFm = raw.replace(/^---[\s\S]*?---\n/, '');` `` — NOT `` `hooks/lib/hook-runtime.js:59` `const noFm = ...` `` (wrapping the path in backticks is the single most common way this fails mechanical verification).
 
+The snippet itself must never contain a literal backtick character — `verifyCitation`'s snippet grammar is `` `([^`]*)` ``, with no escape mechanism, so any backtick inside the quoted span breaks parsing regardless of how it's transcribed. If the cited line's meaningful content is itself backtick-wrapped (a markdown heading, a backtick-quoted path or code span), quote a backtick-free substring of that same line instead — e.g. the surrounding prose — rather than the backtick-wrapped portion.
+
 #### Blockers (plan must be fixed before execute)
 [severity: BLOCKER / HIGH / MEDIUM / LOW — cite the plan step + reason]
 

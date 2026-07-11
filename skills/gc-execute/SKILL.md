@@ -103,6 +103,20 @@ Each executor:
 
 A "track" = one atomic step + its verification criterion + its freshness-hash + its control-flow check, together re-verified at that step's own dispatch time.
 
+#### Verification Rung Ladder
+
+Before emitting the Closed-loop verification signal (line 97 above), determine the highest **rung** this step can legitimately reach. This is a distinct concept from `gc-lean-auditor`'s unrelated "7-Rung" YAGNI-complexity ladder used earlier in `/gc-preflight` — same word, different pipeline stage, different meaning; do not conflate the two. Rung selection is also orthogonal to Track Verification (the file-hash/control-flow staleness checks above) — a rung is about how convincingly a step's own change was verified; Track Verification is about whether the plan's premises about a file are still fresh. A rung downgrade is a normal, benign outcome; a Track Verification mismatch remains a hard pre-execution blocker exactly as today, regardless of rung.
+
+**Applicability gate (check first):** does this step's Definition of Done describe a runtime-observable flow (a UI interaction, an API call, a running process) to drive? If not — e.g. a documentation edit, a skill-prose change, a pure data-transform with no execution path in this session — the ceiling rung is **typecheck/lint**, or **file-exists** if no typecheck/lint applies either. Do not attempt behavioral verification on a step with no runtime surface; this is over-reach, the inverse failure of the under-reach this ladder exists to fix.
+
+**Rungs, highest to lowest** (canonical token in parens — use this exact token wherever rung is reported, per `agents/gc-executor.md`'s Output Contract). Only checked when the applicability gate passes; check for each in order and use the first one available, falling down the list if not:
+1. **Behavioral** (`behavioral`) — drive the affected flow in the running app or service, using whatever the host environment offers this session, checked in order: (a) a `/verify` skill, (b) Playwright or browser MCP tools, (c) equivalent host-provided tooling.
+2. **Executed tests** (`tests`) — a project test runner (package.json script, pytest, etc.) exists: run the project's own test suite (or the specific test file covering this change) and observe pass/fail.
+3. **Typecheck/lint** (`typecheck`) — run the project's typecheck or lint command and observe a clean result.
+4. **File-exists** (`file-exists`) — confirm the target file exists and contains the expected change; the floor rung, unchanged from today's baseline.
+
+If the highest applicable rung's tool is unavailable this session: render `⚠ {rung} unavailable — falling back to {next rung} ({reason})` and proceed at the next rung down. This fallback triggers only on tool/method **unavailability** — never on a negative result from a rung that *was* attempted. A negative signal at any attempted rung is a failed Closed-loop verification signal (line 97) and, under `--auto`, fires condition (a) below exactly as today; it is not a rung downgrade. Report the rung actually reached alongside the verification signal (Output Contract, `agents/gc-executor.md`) — surfaced in both the in-conversation todo status table and the written execution-outcome file (Step 6).
+
 #### Auto-Mode Human-In-Loop Triggers
 
 `gc-execute` recognizes an opt-in `--auto` invocation argument (e.g. `/gc-execute --auto`). Default invocation (no `--auto`) is completely unchanged from the turn-by-turn behavior described above. Under `--auto`, waves proceed without pausing for confirmation between them, **except exactly two conditions force a mandatory stop-and-wait-for-user regardless of `--auto`**: (a) a Track Verification check — including an `UNRESOLVED` result — or a step's own verification signal fails mid-run (see Closed-loop verification and Track Verification above); (b) a Cynefin-tagged **Complex** step is reached — always pauses before implementing past its required probe, regardless of probe outcome or any mechanical-check status. This two-condition list is intentional v1 scope, not yet an extensible registry — a documented, deliberate limitation, not an oversight. `gc-preflight`'s Gate: PASS message may recommend `--auto` as an available option, but never invokes it — auto-mode is always opt-in and user-triggered, never silently entered. Explicitly distinct from Claude Code's own CLI-level "Auto Mode" (harness permission-classifier behavior) — this is a gc-pipeline-level concept layered on top of whatever harness-level auto-mode is or isn't active.
@@ -119,7 +133,7 @@ When an executor reaches a Cynefin-Complex step and runs its mandatory probe (li
 | --- | --- | --- | --- |
 | **Fable-5 consult** | `fable` | `agents/gc-fable5-advisor.md` | Complex-Step Consult |
 
-with the step's text, its probe's Method/Sensing/Acceptance-criteria, and the probe's actual result. Present its `proceed`/`adjust`/`abort` recommendation alongside — never in place of — the existing mandatory human pause at that step (line 108's condition (b) fires exactly as it does today, regardless of the recommendation).
+with the step's text, its probe's Method/Sensing/Acceptance-criteria, and the probe's actual result. Present its `proceed`/`adjust`/`abort` recommendation alongside — never in place of — the existing mandatory human pause at that step (`#### Auto-Mode Human-In-Loop Triggers`'s condition (b), above, fires exactly as it does today, regardless of the recommendation).
 
 **Second and later Complex steps in the same plan:** do not auto-consult. At that step's mandatory pause, ask the user whether they want a Fable-5 consult before deciding. If yes, apply the Contract and dispatch per the table above. If no, the pause proceeds exactly as today.
 
@@ -139,9 +153,9 @@ After all waves complete, ensure `~/.claude/gedeon/plans/{slug}.plan.md` frontma
 
 ### Step 6: Present
 
-Write `~/.claude/gedeon/plans/{slug}-execution-outcome_{YYYY-MM-DD_HHMM}.md` (todo table, verification signals per step, commits, blockers, next steps).
+Write `~/.claude/gedeon/plans/{slug}-execution-outcome_{YYYY-MM-DD_HHMM}.md` (todo table, verification signals and rung reached per step, commits, blockers, next steps).
 
-Present **todo status table** in conversation.
+Present **todo status table** in conversation, including each step's rung reached.
 
 Report execution status (completed / blocked / gaps) and propose next stage as Gedeon.
 
@@ -152,6 +166,7 @@ Report execution status (completed / blocked / gaps) and propose next stage as G
 - Refusing execution because an older pre-flight failed (use latest only)
 - Skipping plan frontmatter todo updates after execution
 - Marking a step done without an observable verification signal
+- Attempting behavioral verification on a step with no runtime surface to drive, or reporting a higher rung than was actually reached (see Verification Rung Ladder, Step 4)
 - Running all steps sequentially when waves could parallelize them
 - Assuming file reads from earlier in the conversation remain tracked after context compaction.
   After a session resumes from a summary, re-read every file before writing it in the current turn —

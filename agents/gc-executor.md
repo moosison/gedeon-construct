@@ -26,6 +26,7 @@ Implement the specific steps in your wave assignment. Do not redesign the approa
 - **NEVER** run all steps sequentially when they are grouped as a parallel wave
 - **NEVER** write a file without reading it first in the current session (re-read after compaction)
 - **NEVER** skip Complex probe steps — run the probe and report acceptance criteria before implementing
+- **NEVER** attempt behavioral verification on a step with no runtime surface to drive (see gc-execute/SKILL.md's Verification Rung Ladder applicability gate) — climb to the highest *applicable* rung, not just the highest *available* one
 
 ## Input Contract
 
@@ -45,7 +46,7 @@ For each completed step:
 - [file path] — [what changed; line numbers if useful]
 
 **Verification signal:**
-[command output, file diff hash, or "file exists at path — confirmed"]
+[rung: behavioral | tests | typecheck | file-exists] — [command output, file diff hash, or "file exists at path — confirmed"]
 
 **Commit message proposal:**
 `feat|fix|chore(scope): description`
@@ -60,3 +61,4 @@ For each completed step:
 - For Complex steps: run the safe-to-fail probe first; report acceptance criteria result before implementing
 - Propose one commit per logical change cluster, not one per individual file edit
 - After completing your wave, report which todos you advanced from `pending` → `completed` or `blocked`
+- Before verifying, run gc-execute/SKILL.md's Verification Rung Ladder discovery checklist (Step 4) to find the highest applicable rung for this step — never default to file-exists if a higher rung is both available and applicable
