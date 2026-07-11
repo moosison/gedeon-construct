@@ -16,6 +16,7 @@ model: opus
 // 4. [Pattern]: gc-pipeline.json write includes "slug" field derived from feature-slug used in the Design Brief (available from user's invocation request).
 // 5. [Gotcha]: gc-resume's artifact ladder matches '{slug}.plan.md' for the "plan written, no preflight" state — if the plan filename convention changes, update gc-resume Step 2's artifact ladder.
 // 6. [Pattern]: Pipeline State Gate reads .claude/gc-pipeline.json BEFORE the create-plan stage write. Gate: absent/corrupt→STOP, eop→WARN+confirm, bootstrap/create-plan→proceed, pre-flight/execute/review→WARN+confirm. Stage write happens only after gate passes.
+// 7. [Constraint]: Plan frontmatter is additive-key tolerant — todo-status updates edit individual status: lines in place, never rewrite/re-serialize the whole frontmatter block (see the affectedFiles: contract in Step 7). This invariant is what keeps new schema keys safe.
 
 # Create Plan
 
@@ -145,6 +146,8 @@ Numbered steps. Each must be:
 
 Every file in the merged affected-files list must map to ≥1 step.
 
+The reverse also holds for workspace files: any atomic step that creates or modifies a workspace file **not** in the Step 3 union must add it to the union at that moment, so Step 7's `affectedFiles:` is complete. Re-derive the union after any plan revision that changes which files steps touch — a revision has no live Step 3 union to add to, so re-walk every atomic step's file references and update the plan's `affectedFiles:` to match, exactly as the other re-run-after-revision sweeps below re-run. Outside-workspace targets (e.g. `~/.claude/` sync copies) stay out of the union — they are not `affectedFiles` entries (a sync step's workspace-side source joins the union only if some step actually modifies it).
+
 Any step that specifies an exact insertion point in an existing file ("insert after line X") or assumes that file's rendering/data structure (single value vs. table, one consumer vs. many) must be verified against that file's **actual current content**, not an earlier bootstrap-stage characterization or an assumed control-flow path. Two real bugs reached execution in one plan this way: an insertion point that sat after an unnoticed earlier `return`, and a file wrongly assumed to render a single-project line when it was actually a cross-project table. Both were missed by four rounds of pre-flight because none of them re-read the target file's full content — they audited the plan's description of it.
 
 **Control-flow verification (exact insertion points):** Any atomic step that specifies an exact insertion point must also state the enclosing function's **entry line number** in the step's text (e.g. "insert after line 42, inside `handleWrite` which begins at line 31"). Before the step counts as finalized, run `node hooks/lib/plan-verifier-cli.js check-control-flow <file> <entryLine> <insertionLine>` via Bash. Three possible outputs: (1) `CLEAR` → finalize. (2) A populated list of flagged risky lines → the flagged line(s) must be explicitly addressed in the step's own text (e.g. "line 36's early return exits before the insertion point — rewritten to insert before that return" or a stated reason the flagged line doesn't affect this insertion) before the step is finalized — a step with unaddressed flagged lines is not done; re-scope until every flagged line has an explicit resolution. (3) `UNRESOLVED: ...` → **never finalizable as-is** — there are no flagged lines to resolve, so "every flagged line has an explicit resolution" can never legitimately apply; fix the underlying cause (wrong file path, wrong entry/insertion line, or a genuinely degenerate range) and re-run the check until it returns `CLEAR` or a populated list.
@@ -195,6 +198,8 @@ name: {feature-slug}
 overview: "{one-line description of the feature}"
 workspace: {absolute path to project root}
 branch: {current git branch}
+affectedFiles:
+  - {workspace-relative/forward-slash/path}
 status: pending
 todos:
   - id: t1
@@ -204,6 +209,12 @@ todos:
 ```
 
 `name:` must equal the filename stem — it is the plan slug. Status values: `pending`, `in_progress`, `completed`, `blocked`. Each atomic step from Step 5 gets one todo entry (`t1`, `t2`, …).
+
+`affectedFiles:` contract:
+- `affectedFiles:` = the Step 3 merged union **plus** any additional workspace files introduced by Step 5's atomic steps (see the Step 5 rule on step-introduced files). (This field is the data layer for the future pipeline-concurrency intersection check — read-only data today, no consumer yet.)
+- Paths are **relative to this plan's own `workspace:` frontmatter field** (never the consuming session's cwd), forward-slash, and must match the ledger's `SCOPE_CHARSET` (`/^[A-Za-z0-9._/-]+$/`, `hooks/lib/ledger-cli.js`) — the same normalization `ledger-cli.js pull` applies. **No path segment may be `..`** — SCOPE_CHARSET alone is not a containment check; any future consumer must resolve entries against the plan's `workspace:` root and verify containment after resolution. Files outside the workspace (e.g. `~/.claude/` sync copies, plan-store artifacts) are excluded by rule.
+- The key is **mandatory for new plans, absent on legacy plans** (a legacy plan gains it the first time a revision re-derives the union, per the Step 5 rule) — consumers must tolerate both, and must tolerate unknown frontmatter keys generally.
+- Todo-status updates (gc-execute/gc-executor) edit individual `status:` lines in place — never rewrite or re-serialize the whole frontmatter block (this is what keeps additive keys safe).
 
 Plan body follows: architecture diagram, merged evidence summary, implementation strategy, atomic steps, verification plan.
 
