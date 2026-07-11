@@ -98,6 +98,8 @@ Dispatch parallel Explore agents to gather evidence. Each agent is read-only and
 | **B — Breadth scout** | `haiku` | `agents/gc-explorer.md` | Hypothesis-driven discovery, entrypoints, suspected-area sweep |
 | **C — Correctness probe** | `haiku` | `agents/gc-explorer.md` | Challenge assumptions, edge cases, contradictions |
 
+**Pass each row's `Model` value explicitly as the `model` parameter on the Agent tool call** — see `agents/gc-brain.md`'s Worker Dispatch Contract for why this is mandatory.
+
 ### Step 4: Merge Findings
 
 Merge scan reports:

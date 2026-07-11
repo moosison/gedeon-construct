@@ -91,6 +91,7 @@ For each wave, dispatch executor agents in parallel with the **entire Execution 
 | --- | --- | --- |
 | All wave executors | `sonnet` | `agents/gc-executor.md` |
 
+**Pass each row's `Model` value explicitly as the `model` parameter on the Agent tool call** — see `agents/gc-brain.md`'s Worker Dispatch Contract for why this is mandatory.
 
 Each executor:
 - Implements plan steps atomically, one at a time

@@ -75,9 +75,11 @@ Select reviewers based on the diff. Always include:
 | **Security Exploits** | `opus` | `agents/gc-reviewer.md` | Auth/authz, injection, input validation, IDOR, SSRF in changed code |
 | **Security Audit** | `opus` | `agents/gc-reviewer.md` | Secrets/credentials in diff, OWASP patterns, unsafe crypto, sensitive data in logs |
 
+**Pass each row's `Model` value explicitly as the `model` parameter on the Agent tool call** — see `agents/gc-brain.md`'s Worker Dispatch Contract for why this is mandatory. The conditional reviewers below use the same `agents/gc-reviewer.md` persona and `opus` tier as the table above — pass `model: "opus"` explicitly for these too, never left implicit.
+
 **Security reviewers are mandatory** for every run after `/gc-execute`. Only skip if the diff is **docs-only** (markdown, comments, no executable/config changes).
 
-Add conditional reviewers when triggered:
+Add conditional reviewers when triggered (all `opus`, `agents/gc-reviewer.md`):
 - Tests changed or production logic without test updates → Testing reviewer
 - API routes, types, serialization → API contract reviewer
 - Retries, timeouts, error handling, async handlers → Reliability reviewer

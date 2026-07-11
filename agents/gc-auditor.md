@@ -51,6 +51,8 @@ Citation column: relative path + line (or line range) + a backtick-quoted exact 
 
 The snippet itself must never contain a literal backtick character — `verifyCitation`'s snippet grammar is `` `([^`]*)` ``, with no escape mechanism, so any backtick inside the quoted span breaks parsing regardless of how it's transcribed. If the cited line's meaningful content is itself backtick-wrapped (a markdown heading, a backtick-quoted path or code span), quote a backtick-free substring of that same line instead — e.g. the surrounding prose — rather than the backtick-wrapped portion.
 
+When a citation targets a plan-store file rather than the codebase, use the project-namespaced form `{project-slug}/{plan-slug}.plan.md` — never the bare filename. Since PR #19 namespaced the plan store, `verifyCitation`'s two-root resolution no longer matches a bare filename except via a legacy-flat fallback that only succeeds for plans still stored flat; a bare-filename citation to a namespaced plan silently FAILs verification, and failed citations are excluded from confidence scoring — quietly weakening real findings behind them. Also never place a raw `|` inside a table-cell citation snippet: the markdown table parser truncates the cell at the pipe (e.g. `data.cwd || process.cwd()` truncates to `data.cwd`), producing a malformed citation — either escape it as `\|` (`verifyCitation` un-escapes `\|` back to `|` before matching), or requote the snippet without the pipe, or quote a pipe-free substring.
+
 #### Blockers (plan must be fixed before execute)
 [severity: BLOCKER / HIGH / MEDIUM / LOW — cite the plan step + reason]
 

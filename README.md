@@ -91,11 +91,11 @@ State is tracked per-project at `.claude/gc-pipeline.json`. Hooks remind you of 
 
 ## Agents
 
-Seven stateless agent files in `agents/`. Each is dispatched by a skill with a context package and returns structured output per its output contract.
+Seven stateless agent files in `agents/`. Six are dispatched by a skill, as a generic subagent's prompt-embedded brief (never via native `gc-*` subagent_type selection), and return structured output per that persona's output contract. `gc-brain.md` is the exception: it is never dispatched — `hooks/gc-session-start.js` injects it directly into the main session's own context at session start, since the main session performs the orchestrator role itself, inline, rather than delegating it.
 
 | Agent                | Dispatched by         | Role                                                            |
 | -------------------- | --------------------- | --------------------------------------------------------------- |
-| `gc-brain.md`        | Gedeon (ambient)      | Pipeline orchestrator -- dispatched by Gedeon for pipeline work |
+| `gc-brain.md`        | Session start (ambient, never dispatched) | Orchestration reference — documents the main session's own inline pipeline behavior |
 | `gc-explorer.md`     | gc-plan, gc-bootstrap | Read-only codebase explorer: structure, call chains             |
 | `gc-auditor.md`      | gc-preflight          | Pre-flight auditor: Cynefin, gaps, contracts (A/B/C)            |
 | `gc-lean-auditor.md` | gc-preflight          | YAGNI lean auditor -- mandatory Auditor D                       |
