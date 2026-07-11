@@ -36,7 +36,7 @@ model: opus
 
 ### Step 2: Code Review Context Package
 
-Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, ~/.claude/skills/gc-plan/SKILL.md — steps 1-3 for {project-slug}, step 6 for {plan-dir}; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here). Read the plan from {plan-dir}/{plan-slug}.plan.md if available.
+Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, ~/.claude/skills/gc-plan/SKILL.md — steps 1-3 for {project-slug}, step 6 for {plan-dir}; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here). Read the plan from {plan-dir}/{plan-slug}.plan.md if available. Also locate `{plan-dir}/{slug}-execution-outcome_*.md` (latest by timestamp if more than one exists) and read it if present — a review can run with none present (e.g. a manual-fix re-review with no fresh `/gc-execute` run). If the latest outcome file's own mtime predates the diff under review (i.e. the diff was touched after the outcome file was written), treat it as stale: still surface it in Context Package §6, but flag it there as `(stale — predates the diff under review)` rather than presenting it as current data.
 
 ```markdown
 ## Code Review Context Package: {plan-slug}
@@ -60,6 +60,11 @@ Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (t
 
 ### 5. Review Mission
 Review changes against plan intent. System-wide impact, contracts, zero deferred debt. Do not rubber-stamp.
+
+### 6. Execution Outcome (Rung Data)
+- Per-step rung reached (from `{slug}-execution-outcome_*.md`, if present): step ID, rung token (`behavioral`/`tests`/`typecheck`/`file-exists`), any fallback/unavailability marker text recorded alongside it
+- If no outcome file exists for this plan-slug: state that explicitly — UAT trigger (Step 3) cannot fire without it
+- If the located outcome file is stale (predates the diff, per Step 2's lead-in check above): state that explicitly alongside the rung data — the UAT reviewer (Step 3) treats a stale outcome file the same as a silently-accepted low rung (default to re-drive, do not trust stale data as current)
 ```
 
 ### Step 3: Review Panel Triage
@@ -84,6 +89,11 @@ Add conditional reviewers when triggered (all `opus`, `agents/gc-reviewer.md`):
 - API routes, types, serialization → API contract reviewer
 - Retries, timeouts, error handling, async handlers → Reliability reviewer
 - Queries, loops, caching, I/O-heavy paths → Performance reviewer
+- At least one executed step's Definition of Done describes a runtime-observable flow (gc-execute's own Applicability Gate, `gc-execute/SKILL.md`'s Verification Rung Ladder subsection) → **UAT** reviewer (requires a located outcome file — see Context Package §6; without one, this trigger does not fire, per §6's own note)
+
+**UAT reviewer mission:** Dispatch this lens with its lens assignment set to exactly the bare token `UAT` — not an elaborated phrase like the prose lenses above (e.g. not "UAT, re-drive under-verified steps") — since `agents/gc-reviewer.md`'s Hard Rules carve-out requires an exact, non-compound match to grant active-tool permission; an elaborated lens claim is read as compound and silently falls back to read-only, disabling this lens's entire mission. Read the rung data from Context Package §6 (added this phase). A step's expected ceiling rung is determined by applying gc-execute's own Applicability Gate to that step's Definition of Done as written in the plan body (the plan's per-step prose, e.g. under a "**Definition of Done:**" label if present, or the step's own descriptive text if not explicitly labeled — this plan has no separate structured field for it; read the step's own text the same way gc-execute's executor does at execution time).
+
+**Re-drive candidate selection — two independent checks, in order:** (1) **File-level staleness (checked first):** if Context Package §6 flags the outcome file as stale (predates the diff), every step covered by that file is a re-drive candidate, *regardless of its individual recorded rung* — a stale file's data is untrustworthy file-wide, including steps that happened to record a rung at or above their ceiling, not just below-ceiling ones. (2) **Per-step rung deficiency (only when the file is not stale):** for each step whose recorded rung is *below* its expected ceiling AND whose outcome-file entry does not carry a clear, explicit unavailability-fallback marker, independently re-drive that step's flow using gc-execute's own discovery checklist (see `gc-execute/SKILL.md`'s Verification Rung Ladder subsection, item 1 — not restated here to avoid the two descriptions drifting apart). A step whose low rung carries an explicit, unambiguous unavailability marker is exempted from a *repeat* attempt of the same tool but IS still a re-drive candidate using an available alternative tool if the discovery checklist offers one — only a confirmed-unavailable exact tool is skipped, not the whole rung. Report re-drive findings through the normal Findings table (Step 5) — no new severity mechanism needed.
 
 ### Step 4: Parallel Reviews
 
@@ -125,6 +135,14 @@ Before editing this file, read the current findings table format to understand h
 | Unit tests | pass/fail |
 | Typecheck | pass/fail |
 | Build | pass/fail |
+
+**Rung reached per step** (from the outcome file, Context Package §6 — display only, source of truth is the outcome file itself, not recomputed here):
+
+| Step | Rung reached | Note |
+| --- | --- | --- |
+| {step id} | `behavioral`\|`tests`\|`typecheck`\|`file-exists` | fallback marker text, if any |
+
+If no outcome file was available (Context Package §6 states this explicitly), state "No execution-outcome data available for this review" instead of an empty table.
 
 Do NOT approve push if any check fails.
 

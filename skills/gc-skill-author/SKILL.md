@@ -76,6 +76,8 @@ Dispatch skills reference agent definitions from `agents/` to inject behavioral 
 
 **When to add a new agent file:** Only for a genuinely new worker role with a distinct mode and output contract. Inline tasks do not need agent files.
 
+**Gate binding, not just gate wording:** when a patch adds a permission exception to a shared agent file that's keyed to an exact-match condition (e.g. "only when the lens/role assignment is exactly `X`"), the calling skill's own dispatch instructions must be updated in the *same* patch to actually pass that exact value — never trust that the calling skill's existing dispatch convention (often a free-text description, not a bare token) happens to satisfy a condition written after the fact. Ship the gate's wording and its dispatch-side binding together; a gate that's airtight in isolation but never actually satisfied by any real dispatch silently disables the feature it was meant to enable.
+
 Body structure:
 1. **Role statement** — what posture to adopt
 2. **When to use** — trigger conditions (if not obvious from description)

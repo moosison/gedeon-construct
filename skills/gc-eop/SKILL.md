@@ -198,9 +198,11 @@ After the session digest is written in Step 2, update this project's entry in `~
 
 ### Step 2c: Write Morning Brief Cache
 
-Read `.construct/ROADMAP.md` (fresh read — do NOT reuse Step 1b content). Extract:
+**Run this step after Step 2d, not before, whenever this session's plan closes or advances a milestone** — despite the numbering, Step 2d writes the exact ROADMAP.md status Step 2c then reads and caches; running 2c first (literal step order) produces a brief-cache.json that is stale from the moment it's written, within this same session. If this session's plan doesn't map to a single milestone (Step 2d skipped silently), the ordering doesn't matter — run 2c whenever convenient.
 
-- **activeMilestone:** Scan all `## Milestone:` headings in document order. For each, look for `**Status:**` in the next 10 lines (case-insensitive). Take the FIRST heading in document order where Status ≠ Completed; absent Status field = treat as incomplete. If all complete (or no milestones): `null`.
+Read `.construct/ROADMAP.md` (fresh read — do NOT reuse Step 1b content, and re-read fresh again if Step 2d already ran and modified it this session). Extract:
+
+- **activeMilestone:** Scan all `## Milestone:` headings in document order. For each, search for `**Status:**` (case-insensitive) anywhere between this heading and the next `## ` heading (or end of file) — no fixed line limit; a milestone's goal/phase/checkbox text before its Status field varies in length and a short fixed window will skip past it, misreading a Completed milestone as active. Take the FIRST heading in document order where Status ≠ Completed; absent Status field = treat as incomplete. If all complete (or no milestones): `null`.
 - **milestoneProgress:** `complete` = count all lines matching `- [x]` across entire file; `total` = count all lines matching `- [` across entire file. *(lean: raw checkbox count — includes sub-tasks and code-block examples; scope to active milestone if precision required)*
 
 Read `.construct/STATE.md` (fresh read). Extract blockers:
