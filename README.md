@@ -159,7 +159,7 @@ Every project using the Gedeon Construct maintains a `.construct/` directory:
   ADVISORY-*.md    <- dated external consult records
 ```
 
-Plan files live outside the project, in a per-project plan store at `~/.claude/gedeon/plans/{project-slug}/` (older plans fall back to the flat root). Pipeline runs may execute in isolated git worktrees under `.worktrees/`. If work finishes without a feature branch, `gc-eop` creates `feature/{plan-slug}` at close time before committing -- nothing lands on `main` directly.
+Plan files live in-project at `.construct/plans/` (gitignored working state); older artifacts fall back to the legacy global store (`~/.claude/gedeon/plans/{project-slug}/`, then flat root). Pipeline runs may execute in isolated git worktrees under `.worktrees/`. If work finishes without a feature branch, `gc-eop` creates `feature/{plan-slug}` at close time before committing -- nothing lands on `main` directly.
 
 ---
 

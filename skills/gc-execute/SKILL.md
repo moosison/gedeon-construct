@@ -185,8 +185,10 @@ Report execution status (completed / blocked / gaps) and propose next stage as G
   the auto-mode classifier blocks this as agent self-expansion of permissions, regardless of scope.
   Do not attempt to pre-authorize batch writes via settings.json mid-pipeline; use `PowerShell Copy-Item`
   for cross-root file copies instead.
-- Committing or creating branches mid-pipeline — right after this stage finishes, before `/gc-review`
-  or `/gc-eop` — instead of leaving branch creation and the commit to `gc-eop`'s own Commit and Push
-  step. That step already does check-then-act branch creation (`git rev-parse --verify feature/{slug}`
+- Committing mid-pipeline — right after this stage finishes, before `/gc-review`
+  or `/gc-eop` — instead of leaving the commit to `gc-eop`'s own Commit and Push
+  step. That step does check-then-act branch handling (`git rev-parse --verify feature/{slug}`
   before creating or checking out) so it never lands a commit on `main`. An ad-hoc commit here bypasses
-  that check entirely and risks committing directly to `main`.
+  that check entirely and risks committing directly to `main`. (Branch *creation* is no longer
+  mid-pipeline work at all — `gc-plan` Step 7 creates `feature/{feature-slug}` at slug-mint time,
+  per the 2026-07-12 user decision; by this stage the branch should already exist.)

@@ -135,6 +135,8 @@ For each auditor (A, B, C, D), in turn:
 4. Pipe the remaining pairs into `node hooks/lib/plan-verifier-cli.js verify-citations` (stdin, one `{step}\t{citationText}` pair per line). Read back one `{step}\tPASS` or `{step}\tFAIL: {reason}` line per input pair. The `step` tag identifies which finding each result belongs to directly — never infer by position, since two findings can carry identical or near-identical citation text.
 5. Delete the scratch file as the last action for that auditor, **unconditionally** — whether `extract-citations`/`verify-citations` succeeded or failed. A mid-run failure must not leave an orphaned scratch file in the plan store.
 
+**Ordering (verify before revising):** complete this citation-verification cycle for ALL auditors before applying any in-round revision to the plan file. An orchestrator edit made between an auditor's read of the plan and this verification shifts or rewrites the cited lines, self-inflicting FAIL results that masquerade as auditor transcription errors. (Confirmed live, plan-artifact-relocation round 2, 2026-07-12: two auditors' plan citations failed purely because the orchestrator applied one auditor's own fixes before running verify-citations.)
+
 If the `SKIPPED` count (`N`) from step 2 is greater than 0, surface it as an **anonymous count only**: "N row(s) in Auditor {A|B|C|D}'s output could not be parsed for citation checking." A skipped row has no `step` tag by design — extraction cannot determine which finding was affected. This does not identify the specific finding, and does not abort verification for that auditor's other findings or any other auditor's findings. (This is deliberately the same anonymous-count treatment `hooks/gc-pre-write-guard.js`'s citation backstop uses for the identical shared mechanism — keep the two consistent.)
 
 Carry every `{step}\tFAIL: {reason}` result forward into Step 3's merge.
@@ -192,7 +194,7 @@ Section 1 (Confidence Dashboard) format contract: include a standalone line, exa
   "type": "gate-verdict",
   "claim": "Gate: {PASS|STOP} for plan {slug}",
   "verdict": true,
-  "evidenceFile": "<this round's Pre-Flight-Review report path>",
+  "evidenceFile": "<this round's Pre-Flight-Review report path — workspace-relative, e.g. `.construct/plans/{plan-slug}-Pre-Flight-Review_{YYYY-MM-DD_HHMM}.md`, never absolute>",
   "scope": ["<the merged affected-files list, per Step 1's Plan Structure Index>"],
   "stage": "pre-flight",
   "planSlug": "<plan slug>"
@@ -201,7 +203,13 @@ Section 1 (Confidence Dashboard) format contract: include a standalone line, exa
 
 `verdict` MUST be the unquoted JSON boolean `true` or `false` (`true` for `**Gate: PASS**`, `false` for `**Gate: STOP**`) — **never** a quoted string like `"true"`. `ledger-cli.js record` rejects a non-boolean `verdict` outright (exit 1, clear error) rather than silently accepting it, since a stringified verdict would otherwise pass JSON parsing but fail `qualifiesForGate` invisibly later.
 
-`evidenceFile` is a raw path, never a pre-computed hash — this instruction never states or computes a hash value itself; `ledger-cli.js record` computes `evidence.hash` internally via `hashFile(evidenceFile, cwd)` before appending. `sourceSession` is deliberately absent from this fact: `ledger-cli.js` is invoked here as a standalone CLI process, not as a Claude Code hook, so there is no session id to populate it with — this is a resolved design decision, not an oversight.
+`evidenceFile` is a raw path, never a pre-computed hash — this instruction never states or computes a hash value itself; `ledger-cli.js record` computes `evidence.hash` internally via `hashFile(evidenceFile, cwd, PLAN_STORE_ROOT)` before appending.
+
+**evidenceFile form:** workspace-relative (e.g. `.construct/plans/{plan-slug}-Pre-Flight-Review_{YYYY-MM-DD_HHMM}.md`), never an absolute path — it resolves via `hashFile`'s workspace root (`cwd`), the first of the two roots tried.
+
+**Legacy-resolved plan-runs:** if this plan-run resolved via gc-plan Step 7's step-6 legacy fallback (its artifact ladder landed in the global store), `evidenceFile` keeps passing that location's path as-is — the two-root fallback (`cwd`, then `PLAN_STORE_ROOT`) still hashes it. Old facts recorded this way age out naturally rather than being retrofitted; new facts are always workspace-relative going forward.
+
+`sourceSession` is deliberately absent from this fact: `ledger-cli.js` is invoked here as a standalone CLI process, not as a Claude Code hook, so there is no session id to populate it with — this is a resolved design decision, not an oversight.
 
 ### Step 5: Present
 
