@@ -17,6 +17,7 @@ model: opus
 // 5. [Gotcha]: gc-resume's artifact ladder matches '{slug}.plan.md' for the "plan written, no preflight" state — if the plan filename convention changes, update gc-resume Step 2's artifact ladder.
 // 6. [Pattern]: Pipeline State Gate reads .claude/gc-pipeline.json BEFORE the create-plan stage write. Gate: absent/corrupt→STOP, eop→WARN+confirm, bootstrap/create-plan→proceed, pre-flight/execute/review→WARN+confirm. Stage write happens only after gate passes.
 // 7. [Constraint]: Plan frontmatter is additive-key tolerant — todo-status updates edit individual status: lines in place, never rewrite/re-serialize the whole frontmatter block (see the affectedFiles: contract in Step 7). This invariant is what keeps new schema keys safe.
+// 8. [Pattern]: --auto-pipeline flag triggers a genuine read-merge-write on .claude/gc-pipeline.json (spread every existing key forward, override stage/slug/updatedAt/autoPipeline unconditionally) at both write call-sites — the Pipeline state blockquote's ordinal-(3) initial write and its Step 7 slug-refinement follow-up write — and auto-cascades into gc-preflight's Self-Drive Loop on Step 7's handoff instead of waiting for user confirmation.
 
 # Create Plan
 
@@ -25,9 +26,14 @@ model: opus
 **Prior stage:** `/gc-bootstrap` (carry situational brief into Step 1 for bootstrap reuse)
 **Next stage:** `/gc-preflight`
 
-> **Pipeline state:** Three explicit ordered steps — (1) Read `.claude/gc-pipeline.json` for gate (see Pipeline State Gate below), (2) evaluate gate condition, (3) write `{"stage":"create-plan","slug":"<feature-slug>","updatedAt":"<current ISO timestamp>"}` only AFTER gate passes. Never write before the gate evaluates. Create `.claude/` first if absent.
-> - If slug argument provided at invocation (e.g., `/gc-plan gc-resume`): write slug at step 3. If slug is refined during Step 7, do a two-step write: initial write at step 3 with invocation slug, then update after Step 7 confirms the final feature-slug.
-> - If no slug argument (bare `/gc-plan`): defer step 3 write to immediately after Step 1 (when feature-slug is first formalized in the Design Brief), but only after gate passes.
+> **Pipeline state:** Three explicit ordered steps in this blockquote — (1) Read `.claude/gc-pipeline.json` for gate (see Pipeline State Gate below), (2) evaluate gate condition, (3) write `.claude/gc-pipeline.json` only AFTER gate passes, using the canonical generic read-merge-write mechanism: read the existing file first (tolerating absent/corrupt exactly as the Pipeline State Gate already does, treating that case as an empty object to merge into), spread every key already present in it forward, then override `stage`, `slug`, `updatedAt`, and unconditionally `autoPipeline` — `true` when `--auto-pipeline` was given at invocation, `false` on every other invocation, not merely omitted from the override set (an omitted key would let a stale `true` from a crashed or abandoned prior cascade survive untouched through a plain `/gc-plan` invocation on an unrelated feature — the identical class of leak the consume-on-read redesign exists to close, just relocated to this writer). This is a true generic merge (any future key added by any writer survives this write untouched), not a hardcoded single-field preserve. Never write before the gate evaluates. Create `.claude/` first if absent.
+> - **`--auto-pipeline` flag:** `gc-plan` recognizes an opt-in `--auto-pipeline` invocation argument (e.g. `/gc-plan --auto-pipeline` or `/gc-plan {slug} --auto-pipeline`), following the identical convention `gc-execute`'s `--auto` already establishes. Default invocation (no flag) is completely unchanged.
+> - If slug argument provided at invocation (e.g., `/gc-plan gc-resume`): write slug at this blockquote's ordinal-(3) write. If slug is refined during Step 7, do a two-step write: the ordinal-(3) write with the invocation slug, then a second write after Step 7 confirms the final feature-slug — this second write uses the identical generic read-merge-write mechanism described above (read the file again, spread every existing key forward, override `stage`, `slug`, `updatedAt`; `autoPipeline` needs no further action here since the ordinal-(3) write already set it correctly for this cascade). Both writes are the same corrected mechanism, not two separate fixes — converting only the ordinal-(3) write would leave this second write a blind overwrite that silently drops `autoPipeline` moments after the first write sets it, for exactly the invocations where the slug is refined during authoring.
+> - If no slug argument (bare `/gc-plan`): defer the ordinal-(3) write to immediately after Step 1 (when feature-slug is first formalized in the Design Brief), but only after gate passes.
+> - **Read-scope boundary:** `autoPipeline` only needs to survive the `gc-plan → gc-preflight (N rounds) → gc-execute` cascade.
+>   - `gc-bootstrap`'s write always runs *before* this flag is set for a given cascade (nothing to preserve yet, under the disclosed assumption that `gc-bootstrap` is not re-invoked mid-cascade — a low-probability edge case, not verified further this milestone).
+>   - `gc-review`'s and `gc-eop`'s writes run *after* `gc-execute` finishes, and this milestone's cascade scope stops at `gc-execute` by design (`gc-discuss` CONTEXT.md, 2026-07-11) — remaining literal-template writers is intentional, not an oversight, and explicitly out of scope for this milestone (see Track 2 item A, `.construct/phases/parallel-pipeline-isolation/phase-scoped-pipeline-json/phase-scoped-pipeline-json-CONTEXT.md`, for the full 6-writer redesign this milestone deliberately does not attempt).
+>   - `autoPipeline` is consume-on-read: `gc-execute`'s own Step-1 write clears it immediately upon reading it, before any waves dispatch — this is what actually removes the key on the happy path, unconditionally and immediately, not a downstream side effect of `gc-review`'s later write. `gc-review`/`gc-eop` never need to observe or clear it at all under this design.
 
 ### Pipeline State Gate
 
@@ -172,6 +178,8 @@ Immediately after an atomic step states its insertion point and entry line in pr
 
 **Prose-contract completeness check:** Any rule authored in Step 5 or Step 7 that will govern a future reader's behavior — a re-run/revision condition, a boundary-case classification, a source/destination direction, or a read-scope vs. write-set distinction — must state that dimension explicitly, not leave it inferable from the happy-path wording. Four findings in one code review (missing revision clause, undefined legacy-revision case, implicit source/destination rule, read/write conflation) all traced to rules whose main case was precise but whose edge dimension was silent — the same underspecification class as the citation-sweep grep-pattern ambiguity from `plan-store-project-namespacing` (2026-07-11, PR #20). Before finalizing a prose contract clause, check it against these four dimensions and state any that apply.
 
+**Dense-paragraph check (revision hygiene):** When a pre-flight or code-review round adds a new rule to an existing prose contract clause, prefer inserting it as a new labeled sub-bullet (`**Label:** ...`) rather than appending another trailing clause to the same paragraph, once that paragraph already carries 2+ independently-referenced rules. A paragraph that accretes fix-after-fix as trailing clauses across multiple revision rounds becomes hard for a future maintainer to navigate — the same readability regression a Maintainability code reviewer flagged three separate times in one plan (`pipeline-spanning-auto-mode`, 2026-07-12), each time as a mega-paragraph carrying 4-5 distinct rules appended during rapid iteration. This is a revision-time habit to break, not a one-time authoring rule — check it specifically whenever a fix is being appended to text that already exists, not just when writing a clause fresh.
+
 ### Step 6: Verification (Definition of Done)
 
 1. **Test cases** — 3 per major change (success, failure, edge)
@@ -222,7 +230,7 @@ todos:
 
 Plan body follows: architecture diagram, merged evidence summary, implementation strategy, atomic steps, verification plan.
 
-Confirm the plan is written, then propose preflight as Gedeon.
+Confirm the plan is written. If `--auto-pipeline` was given at invocation, the orchestrator invokes the `gc-preflight` skill immediately (the same mechanism as a human re-typing `/gc-preflight`), without waiting for user confirmation, entering the Self-Drive Loop described in `gc-preflight/SKILL.md`. Otherwise (default invocation), propose preflight as Gedeon and await confirmation, unchanged.
 
 ## Anti-Patterns
 
