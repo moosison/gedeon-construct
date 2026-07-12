@@ -185,6 +185,7 @@ Immediately after an atomic step states its insertion point and entry line in pr
 1. **Test cases** — 3 per major change (success, failure, edge)
 2. **Integration checks** — cross-service flows needing E2E verification
 3. **Visual check** — manual UI/log verification
+4. **Signal executability** — every verification-signal command in the plan must be executable exactly as written: state the full flag set in the command text (`-P` whenever a pattern uses hex escapes like `\x60`, plus `-i`/`-c` as needed), and live-probe each signal against the current pre-change file at plan-authoring time — a detector that fires on the pre-change file is the cheapest proof the command works. (A `\x60` pattern under plain grep is treated as literal text and silently returns 0 matches, turning a "== 0" exclusion signal vacuously green; confirmed live, readme-rewrite 2026-07-12, after signal executability had already been the same plan's round-1 pre-flight BLOCKER in a different form.)
 
 ### Step 7: Write and Present the Plan
 
