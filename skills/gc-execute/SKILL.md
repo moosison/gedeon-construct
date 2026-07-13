@@ -143,7 +143,7 @@ with the step's text, its probe's Method/Sensing/Acceptance-criteria, and the pr
 
 **Second and later Complex steps in the same plan:** do not auto-consult. At that step's mandatory pause, ask the user whether they want a Fable-5 consult before deciding. If yes, apply the Contract and dispatch per the table above. If no, the pause proceeds exactly as today.
 
-If unavailable at any consult point (date past 2026-07-12, or dispatch fails per the Contract's retry rule): render `⚠ Fable-5 unavailable — falling back to pause-without-consult ({reason})` and proceed straight to the existing mandatory pause.
+If unavailable at any consult point (date past 2026-07-19, or dispatch fails per the Contract's retry rule): render `⚠ Fable-5 unavailable — falling back to pause-without-consult ({reason})` and proceed straight to the existing mandatory pause.
 
 #### Pause Persistence (Mandatory-Stop Artifact)
 
