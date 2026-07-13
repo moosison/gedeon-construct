@@ -13,6 +13,7 @@ model: opus
 // 2. [Constraint]: Never interrupt the review cycle to generate @ai-rules headers. Post-cycle only.
 // 3. [Pattern]: gc-pipeline.json write includes "slug" field derived from plan frontmatter name: field (filename stem as fallback).
 // 4. [Gotcha]: gc-resume's artifact ladder matches '{slug}-Code_Review_*.md' — if this filename pattern changes, update gc-resume Step 2's artifact ladder.
+// 5. [Gotcha]: Step 2's outcome consumption is a consumer of gc-execute's Pause Persistence producer contract — a first-line `**Report Type: Pause**` marks a Pause record, never a rung-data source (see gc-execute/SKILL.md's Pause Persistence (Mandatory-Stop Artifact) subsection).
 
 # Code Review (Pipeline Stage 5)
 
@@ -36,7 +37,12 @@ model: opus
 
 ### Step 2: Code Review Context Package
 
-Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, ~/.claude/skills/gc-plan/SKILL.md — steps 1-3 for {project-slug}, step 6 for {plan-dir}; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here). Read the plan from {plan-dir}/{plan-slug}.plan.md if available. Also locate `{plan-dir}/{slug}-execution-outcome_*.md` (latest by timestamp if more than one exists) and read it if present — a review can run with none present (e.g. a manual-fix re-review with no fresh `/gc-execute` run). If the latest outcome file's own mtime predates the diff under review (i.e. the diff was touched after the outcome file was written), treat it as stale: still surface it in Context Package §6, but flag it there as `(stale — predates the diff under review)` rather than presenting it as current data.
+Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, ~/.claude/skills/gc-plan/SKILL.md — steps 1-3 for {project-slug}, step 6 for {plan-dir}; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here). Read the plan from {plan-dir}/{plan-slug}.plan.md if available. Then gather execution-outcome data — a review can run with none present (e.g. a manual-fix re-review with no fresh `/gc-execute` run):
+
+- **Locate:** enumerate every `{plan-dir}/{slug}-execution-outcome_*.md` for this plan-slug, sorted newest-first by mtime (the outcome family's established sort — gc-resume @ai-rules rule 5; gc-execute's filename-collision rule keeps minutes distinct, so mtime order and filename-timestamp order agree in practice).
+- **Selection walk (Pause-variant discrimination):** take the FIRST file whose first line is NOT `**Report Type: Pause**` as the outcome file used for §6's rung data. The newest `**Report Type: Pause**` record, if any exists, is surfaced separately in §6 as an informational line only, never as the rung-data source.
+- **Boundary case:** if a `**Report Type: Pause**` record is newest but an older marker-free (final) outcome exists, the older final outcome is used for §6's rung data and will typically be flagged stale by the staleness check below — this is correct, since the diff under review post-dates it.
+- **Staleness:** if the chosen outcome file's own mtime predates the diff under review (i.e. the diff was touched after the outcome file was written), treat it as stale: still surface it in Context Package §6, but flag it there as `(stale — predates the diff under review)` rather than presenting it as current data.
 
 ```markdown
 ## Code Review Context Package: {plan-slug}
@@ -65,6 +71,7 @@ Review changes against plan intent. System-wide impact, contracts, zero deferred
 - Per-step rung reached (from `{slug}-execution-outcome_*.md`, if present): step ID, rung token (`behavioral`/`tests`/`typecheck`/`file-exists`), any fallback/unavailability marker text recorded alongside it
 - If no outcome file exists for this plan-slug: state that explicitly — UAT trigger (Step 3) cannot fire without it
 - If the located outcome file is stale (predates the diff, per Step 2's lead-in check above): state that explicitly alongside the rung data — the UAT reviewer (Step 3) treats a stale outcome file the same as a silently-accepted low rung (default to re-drive, do not trust stale data as current)
+- If only `**Report Type: Pause**` records exist for this plan-slug (no marker-free outcome file found by the Step 2 selection walk): state that explicitly and treat it as "no outcome file" for the UAT trigger — it cannot fire, per this section's own note above — while noting the newest Pause record's `Pause Reason` and `Paused At Step` informationally
 ```
 
 ### Step 3: Review Panel Triage
@@ -153,6 +160,8 @@ Path: `{plan-dir}/{plan-slug}-Code_Review_{YYYY-MM-DD_HHMM}.md`
 Sections: Summary (reviewers + lenses), Downstream Impact, Findings & Fixes (with Flagged By column), Reviewer Disagreements, Verification Gate table.
 
 Paste full report in conversation.
+
+**Post-fix runtime re-sync:** if any in-session finding fix touched a file under `skills/` or `agents/`, re-run the runtime-copy sync for every such file (PowerShell `Copy-Item`, one call per file) and verify per-pair `Get-FileHash` equality before presenting the verdict — a sync performed earlier in the session does not cover post-review fixes. (A 2026-07-12 lapse left `~/.claude/skills/gc-review/SKILL.md` missing an entire merged feature block until the next session's plan-time hash probe caught it.)
 
 Report review verdict (clean or findings with severity summary) and propose next stage as Gedeon.
 

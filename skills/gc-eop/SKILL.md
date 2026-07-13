@@ -271,7 +271,7 @@ After the behavioral gap gate resolves (gc-correct complete or skipped), handle 
      - If the check fails (branch absent): `git checkout -b feature/{plan-slug}`; push-target = `feature/{plan-slug}`
    - Stage tracked-modified project files (exclude `.env`, credential files, secrets). Only add untracked files by explicit path after confirming they are not secrets.
    - Commit with message: `feat({plan-slug}): {one-line summary}` — match type to work done.
-   - Append `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`.
+   - Append `Co-Authored-By: The Gedeon Construct <https://github.com/moosison/gedeon-construct>` — the pipeline is the co-author, deliberately model-agnostic, credited by its repo link rather than any email (user decision 2026-07-13, replacing a stale hardcoded model name that mis-attributed across model generations). Note: GitHub only renders a linked co-author chip for real account emails; this trailer shows as plain text by design.
 
 3. **If remote is configured:** push the push-target branch — `git push origin {push-target} -u`.
    If no remote: skip push, note *"Changes committed locally — no remote configured."*

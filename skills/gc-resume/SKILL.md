@@ -12,7 +12,7 @@ model: sonnet
 // 3. [Pattern]: Path normalization is mandatory — lowercase both paths, replace \ with /, strip trailing / before workspace comparison.
 // 4. [Pattern]: Gate extraction from Pre-Flight-Review: look for `**Gate: (PASS|STOP)**` pattern (primary); fall back to the `**Overall Confidence** N%` row for display only; if both absent, display "gate: unknown".
 // 5. [Pattern]: Pre-Flight-Review sort: filename lexicographic on _YYYY-MM-DD_HHMM suffix (not mtime — NTFS mtime unreliable on Windows). All other artifacts: mtime sort.
-// 6. [Pattern]: Mid-execute resume: surface ALL pending/in-progress todos (not just "first non-completed"). Wave grouping is re-derived by gc-execute from dependency analysis.
+// 6. [Pattern]: Mid-execute resume: surface ALL pending/in-progress todos (not just "first non-completed"). Wave grouping is re-derived by gc-execute from dependency analysis. When the newest execution-outcome is a `**Report Type: Pause**` record, mid-execute resume also surfaces the Pause Record (reason, paused-at step, payload) in the Recovery Brief.
 
 # Recover Pipeline
 
@@ -64,6 +64,8 @@ All patterns in this table resolve relative to the plan's own resolved `{plan-di
 | `{slug}.plan.md` only | gc-preflight |
 | Nothing | gc-plan |
 
+An outcome file whose first line is `**Report Type: Pause**` is a Pause record (gc-execute's Pause Persistence subsection); it matches this rung exactly like a final outcome, and because a Pause record always coexists with ≥1 non-completed todo, the existing "todos[] complete?" branch routes it to `gc-execute (resume)` unmodified.
+
 **Reconciliation:** gc-pipeline.json is primary; artifact ladder is fallback.
 
 Pipeline order: bootstrap=0, create-plan=1, pre-flight=2, execute=3, review=4, eop=5.
@@ -83,11 +85,11 @@ For multiple Pre-Flight-Review files: sort by **filename lexicographic on `_YYYY
 Based on reconciled stage, load:
 - Always: plan frontmatter `todos[]`, `workspace`, `branch`, `overview`
 - If preflight exists: latest `{slug}-Pre-Flight-Review_*.md` — extract `**Gate: (PASS|STOP)**` pattern (primary); also read the `**Overall Confidence** N%` row for display only; display "gate: unknown" if both absent
-- If execution outcome exists: `{slug}-execution-outcome_*.md` (todo completion table)
+- If execution outcome exists: `{slug}-execution-outcome_*.md` (todo completion table). When the newest outcome file's first line is `**Report Type: Pause**`, also extract `Pause Reason`, `Paused At Step`, and the `## Pause Record` payload (always the newest Pause record when several have accumulated — older ones are history).
 - If review exists: `{slug}-Code_Review_*.md` (verdict, finding summary)
 - If session digest exists (fast path): `{slug}-session-digest_*.md` (full pipeline history)
 
-For mid-execute recovery (no outcome file): identify **all** pending/in-progress todos from `todos[]` — do not assume "first non-completed = resume point." gc-execute runs todos in parallel waves; surface all incomplete todos. Wave grouping is re-derived by gc-execute.
+For mid-execute recovery (no outcome file, or the newest outcome is a `**Report Type: Pause**` record): identify **all** pending/in-progress todos from `todos[]` — do not assume "first non-completed = resume point." gc-execute runs todos in parallel waves; surface all incomplete todos. Wave grouping is re-derived by gc-execute.
 
 ### Step 4: Build Recovery Brief
 
@@ -112,6 +114,10 @@ For mid-execute recovery (no outcome file): identify **all** pending/in-progress
 
 ### Recommended Next Action
 → /{gc-skill} — {one-line reason}
+
+### Pause Record
+{rendered only when the newest execution-outcome's first line is `**Report Type: Pause**`; carries Pause Reason, Paused At Step, a payload summary (probe result / failing signal / blocker list), and the question awaiting the user (complex-step-probe pauses only — the other reasons carry no question field)}
+{omit section otherwise, same convention as Source Conflicts}
 
 ### ⚠ Source Conflicts
 {list any disagreements between gc-pipeline.json stage and artifact-ladder evidence}

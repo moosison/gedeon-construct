@@ -48,6 +48,9 @@ For each completed step:
 **Verification signal:**
 [rung: behavioral | tests | typecheck | file-exists] — [command output, file diff hash, or "file exists at path — confirmed"]
 
+**Probe result (Complex steps only):**
+[Method | Sensing | Acceptance criteria | actual result — stated fully enough for the orchestrator to transcribe verbatim into a Pause record (gc-execute/SKILL.md's Pause Persistence subsection)]
+
 **Commit message proposal:**
 `feat|fix|chore(scope): description`
 
@@ -58,7 +61,7 @@ For each completed step:
 ## Notes
 
 - Update plan frontmatter todo statuses as you complete each step
-- For Complex steps: run the safe-to-fail probe first; report acceptance criteria result before implementing
+- For Complex steps: run the safe-to-fail probe first; report acceptance criteria result before implementing — the result is reported in the structured `**Probe result**` block of the Output Contract, not only narrative prose
 - Propose one commit per logical change cluster, not one per individual file edit
 - After completing your wave, report which todos you advanced from `pending` → `completed` or `blocked`
 - Before verifying, run gc-execute/SKILL.md's Verification Rung Ladder discovery checklist (Step 4) to find the highest applicable rung for this step — never default to file-exists if a higher rung is both available and applicable
