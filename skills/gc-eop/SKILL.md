@@ -27,6 +27,7 @@ model: sonnet
 //    fields in ROADMAP.md — the only mechanical write path for milestone lifecycle.
 //    Skip silently if the plan's scope doesn't map to a single milestone heading
 //    (e.g. an advisory/consult session, or work spanning multiple milestones).
+// 11. [Pattern]: Step 2 deletes .construct/pipelines/{slug}.json after the digest write (slug-validated per gc-plan's canonical definition; this slug only; skip silently if absent).
 
 # End of Pipeline (EOP)
 
@@ -184,6 +185,8 @@ If `.construct/DEBT.json` does not exist, skip silently. If it exists but has no
 Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (the gc-plan skill's Step 7, ~/.claude/skills/gc-plan/SKILL.md — steps 1-3 for {project-slug}, step 6 for {plan-dir}; step 7's duplicate-layout precedence rule is scoped to discovery consumers only — gc-resume/gc-ship — and doesn't apply here).
 
 Write to: `{plan-dir}/{slug}-session-digest_{YYYY-MM-DD_HHMM}.md`
+
+**Phase-record cleanup:** after the digest is written, validate `{slug}` per the canonical Phase-record definition in `gc-plan/SKILL.md`'s Pipeline state blockquote (charset plus `..`/separator/drive-letter rejection — a rejected slug never reaches path construction), then delete `.construct/pipelines/{slug}.json` if present; skip silently if the slug fails validation, the file is absent, or `.construct/` is absent. Digest-written is the artifact ladder's own pipeline-closed state, so the enumeration record must not outlive it. Deletion targets only this slug's record — never touch other records (they are other active pipelines). A record left behind by a pre-deletion crash is a fail-safe over-report, removed by this step on that slug's next close. (This paragraph's inline restatement of the validation clause — vs t5–t7's reference-only form — is deliberate: deletion is the destructive path and carries the reminder in its body text, per round-2 Auditor C's asymmetry note.)
 
 ### Step 2b: Update Project Index with Closed Status
 

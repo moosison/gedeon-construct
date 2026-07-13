@@ -14,6 +14,7 @@ model: opus
 // 3. [Pattern]: gc-pipeline.json write includes "slug" field derived from plan frontmatter name: field (filename stem as fallback).
 // 4. [Gotcha]: gc-resume's artifact ladder matches '{slug}-Code_Review_*.md' — if this filename pattern changes, update gc-resume Step 2's artifact ladder.
 // 5. [Gotcha]: Step 2's outcome consumption is a consumer of gc-execute's Pause Persistence producer contract — a first-line `**Report Type: Pause**` marks a Pause record, never a rung-data source (see gc-execute/SKILL.md's Pause Persistence (Mandatory-Stop Artifact) subsection).
+// 6. [Pattern]: Phase-record upsert at the pipeline-state write — .construct/pipelines/{slug}.json, canonical mechanism (incl. slug validation and sessionId sourcing) in gc-plan's Pipeline state blockquote.
 
 # Code Review (Pipeline Stage 5)
 
@@ -23,6 +24,8 @@ model: opus
 **Next stage:** `/gc-eop` (if clean) or fix findings → `/gc-preflight` again
 
 > **Pipeline state:** At the start of this skill, write `{"stage":"review","slug":"<plan-slug>","updatedAt":"<current ISO timestamp>"}` to `.claude/gc-pipeline.json` in the current project directory. Create `.claude/` first if absent. Slug from ARGUMENTS or plan frontmatter `name:` field; fallback to filename stem.
+>
+> **Phase record:** after the flat-file write, perform the Phase-record upsert per the canonical definition in `gc-plan/SKILL.md`'s Pipeline state blockquote against `.construct/pipelines/{slug}.json` (create-if-absent; `sessionId` from `.claude/gc-session.json` per that canonical definition — not an output of any resolution step — `planDir` from Step 2's plan-dir resolution).
 
 ## Execution Steps
 
