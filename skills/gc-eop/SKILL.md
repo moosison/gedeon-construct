@@ -28,6 +28,7 @@ model: sonnet
 //    Skip silently if the plan's scope doesn't map to a single milestone heading
 //    (e.g. an advisory/consult session, or work spanning multiple milestones).
 // 11. [Pattern]: Step 2 deletes .construct/pipelines/{slug}.json after the digest write (slug-validated per gc-plan's canonical definition; this slug only; skip silently if absent).
+// 12. [Pattern]: Commit and Push item 2 (wip-pause reconciliation) runs before item 3's uncommitted-changes branch, unconditionally, using the literal marker "wip(pause):" — a parked branch has a clean tree and would otherwise skip both item 3 and item 7's "no uncommitted changes: skip silently" straight past an un-reconciled wip(pause) commit.
 
 # End of Pipeline (EOP)
 
@@ -263,10 +264,17 @@ After gc-correct signals complete with 'Gaps captured and patches applied.', pro
 After the behavioral gap gate resolves (gc-correct complete or skipped), handle session changes based on repository state:
 
 1. **Detect repo state:**
-   - Run `git rev-parse --is-inside-work-tree`. If it fails → no git repo (go to step 5).
+   - Run `git rev-parse --is-inside-work-tree`. If it fails → no git repo (go to step 6).
    - Run `git remote -v`. If output is empty → git repo with no remote configured.
 
-2. **If git repo exists and uncommitted changes exist:**
+2. **Wip-pause reconciliation** (runs immediately after item 1's repo-state detection, unconditionally — before item 3's "uncommitted changes exist" branch is evaluated, since a parked branch has a clean tree and would otherwise never reach this check):
+   - **Slug resolution:** if a git repo exists, resolve `{this-slug}` using the identical fallback chain item 3's own Resolve-plan-slug bullet defines below (`.claude/gc-pipeline.json` `slug` → plan frontmatter `name:` → filename stem) — this resolution intentionally runs before item 3's own Staleness check further down; if this session ran neither `/gc-plan` nor `/gc-execute`, `{this-slug}` could momentarily resolve to a stale prior-milestone slug, but that is harmless here — the marker check below only ever fires on an exact-match `wip(pause): {this-slug}` subject, so a wrong slug simply no-ops this guard rather than mis-reconciling anything, and item 3's own Staleness check still runs unaffected afterward. If unresolvable, skip this guard silently.
+   - **Marker check:** run `git log -1 --pretty=%s`. If the subject exactly matches `wip(pause): {this-slug}`, perform the Newest-Pause-artifact lookup (canonical, `gc-resume/SKILL.md`'s Park Procedure blockquote) for `{this-slug}` and read its `**Parked Commit SHA:**`; compare against current `git rev-parse HEAD`. If it matches (or no such artifact is found, or one is found but its SHA field is absent/unreadable — proceed on subject-match alone, noting "reconciled without SHA confirmation" in the close-out summary): run `git reset --soft HEAD~1` (auto-reconcile — user-decided 2026-07-14, reusing the identical marker-checked mechanism `gc-resume/SKILL.md`'s Park Procedure and Step 0 un-park check use), note "Un-parked `wip(pause): {this-slug}` before closing."
+   - **Re-evaluation:** this reset makes the parked diff uncommitted again — item 3's "uncommitted changes exist" condition must be (re-)evaluated after this guard runs, never from an earlier snapshot taken before it.
+   - **Mismatch handling:** if the subject matches a `wip(pause):` marker for any OTHER slug, or the SHA doesn't match, or any unexpected/malformed form: do not touch history — surface "⚠ Unexpected wip(pause) marker at HEAD: `{subject}` — left untouched, resolve manually before closing" and pause this step for user input before continuing to item 3.
+   - **Common case:** if the subject doesn't match any `wip(pause):` pattern at all: proceed directly to item 3, unchanged — this is the overwhelmingly common path (a pipeline that was never parked) and carries no overhead beyond the one `git log` check above.
+
+3. **If git repo exists and uncommitted changes exist:**
    - **Resolve plan-slug:** Read from `.claude/gc-pipeline.json` `slug` field (written by gc-plan or gc-execute). Fallback: plan frontmatter `name:` field. Fallback: filename stem of the active plan file. This fallback reuses the same `{plan-dir}` already resolved at Step 2 in this invocation — never re-resolves or re-derives it independently. Validate slug matches `[a-z0-9][a-z0-9._-]*`. If unresolvable or invalid: skip branch creation, commit to current branch, set push-target = current branch, note *"No valid plan slug resolved — committed to current branch."*
      **Staleness check (before trusting a syntactically valid gc-pipeline.json slug):** if this session ran no `/gc-plan` and no `/gc-execute` (no new plan file authored, no execution occurred this session), the slug inherited from `gc-pipeline.json` may name a prior, already-completed milestone unrelated to this session's actual work — validating syntax alone does not catch this. In that case, do not reuse it silently: derive a fresh, short, kebab-case slug (matching the same `[a-z0-9][a-z0-9._-]*` pattern) describing this session's actual work, and state which slug was used and why before proceeding to branch creation.
    - **If slug is valid — check branch first** (check-then-act): run `git rev-parse --verify feature/{plan-slug}`.
@@ -276,16 +284,16 @@ After the behavioral gap gate resolves (gc-correct complete or skipped), handle 
    - Commit with message: `feat({plan-slug}): {one-line summary}` — match type to work done.
    - Append `Co-Authored-By: The Gedeon Construct <https://github.com/moosison/gedeon-construct>` — the pipeline is the co-author, deliberately model-agnostic, credited by its repo link rather than any email (user decision 2026-07-13, replacing a stale hardcoded model name that mis-attributed across model generations). Note: GitHub only renders a linked co-author chip for real account emails; this trailer shows as plain text by design.
 
-3. **If remote is configured:** push the push-target branch — `git push origin {push-target} -u`.
+4. **If remote is configured:** push the push-target branch — `git push origin {push-target} -u`.
    If no remote: skip push, note *"Changes committed locally — no remote configured."*
 
-4. **After a successful push to a feature branch:** Emit as the final line of gc-eop output (formatted distinctly, after all other output):
+5. **After a successful push to a feature branch:** Emit as the final line of gc-eop output (formatted distinctly, after all other output):
    `NEXT STEP: Changes pushed to {push-target}. Run /gc-ship to open the pull request.`
    If push-target was current branch (slug unresolvable): note the branch pushed; /gc-ship should be run from the correct feature branch if a PR is needed.
 
-5. **If no git repo:** skip entirely, note *"No git repository detected — session changes are local only."*
+6. **If no git repo:** skip entirely, note *"No git repository detected — session changes are local only."*
 
-6. If no uncommitted changes: skip silently.
+7. If no uncommitted changes: skip silently.
 
 Signal pipeline complete in Gedeon voice — name the digest path, confirm the commit hash and branch pushed (or local/no-repo status), and ask if anything remains before closing.
 
