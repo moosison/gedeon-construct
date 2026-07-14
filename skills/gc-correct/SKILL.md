@@ -10,7 +10,7 @@ tags: [self-improvement, corrective-memory, behavioral-gap, meta]
 // @ai-rules:
 // 1. [Pattern]: Closing step is a pre-condition gate: trigger phrase present → signal only; absent → propose /gc-eop.
 // 2. [Constraint]: Trigger phrase is exactly 'invoked from inside gc-eop's closing sequence' — substring match.
-// 3. [Gotcha]: When invoked from gc-eop, close with ONLY 'Gaps captured and patches applied.' — no /gc-eop proposal.
+// 3. [Gotcha]: When invoked from gc-eop, render 'Gaps captured and patches applied.' as a transitional status line (no /gc-eop proposal), then continue in the SAME turn into gc-eop's remaining steps — never end the turn here. Confirmed live twice (2026-07-14): the prior "close with ONLY X" wording read as a turn-ending cue and left the pipeline hanging until the user had to prompt again.
 
 # Correct (Corrective Memory)
 
@@ -112,7 +112,7 @@ Reset the entry for the skill that **flagged** the gap (the incremented Error Co
 
 ### Closing
 
-**If** the immediately-preceding caller context (from gc-eop's delegation block) contains the phrase 'invoked from inside gc-eop's closing sequence': close with exactly 'Gaps captured and patches applied.' and stop — gc-eop resumes pipeline-complete automatically.
+**If** the immediately-preceding caller context (from gc-eop's delegation block) contains the phrase 'invoked from inside gc-eop's closing sequence': render exactly the line 'Gaps captured and patches applied.' as a transitional status line — not a turn-ending message — then, within this same assistant turn, continue directly into gc-eop's own next step (Commit and Push) without waiting for user input. Do not end the turn here; gc-eop's remaining steps are not a separate confirmation-gated action, they are the direct continuation of the same close-out already in progress.
 **Otherwise** (standalone invocation — phrase absent from caller context): confirm gaps captured in Gedeon voice, then propose /gc-eop.
 
 ## Anti-Patterns
