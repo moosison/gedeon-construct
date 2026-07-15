@@ -99,6 +99,13 @@ gc-bootstrap: 0
 }
 ```
 
+**`.gitignore`** — the planning tree and pipeline state are local-only; without this, every new project leaks `.construct/` artifacts and `.claude/*.json` state into git. If a `.gitignore` already exists, append only the lines it is missing (do not duplicate or clobber existing entries); if absent, create it with:
+```
+# Gedeon Construct — planning artifacts and pipeline state are local-only
+.construct/
+.claude/*.json
+```
+
 ### Step 3: Register in Global Index
 
 Read `~/.claude/gedeon/projects/index.json` with the Read tool. Parse the JSON array. Check if an entry with this project's slug already exists. If not, append:
