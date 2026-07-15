@@ -163,6 +163,12 @@ Plan files live in-project at `.construct/plans/` (gitignored working state); ol
 
 ---
 
+## Optional Companion -- Cockpit UI
+
+The `cockpit/` subdirectory is an optional, self-contained browser cockpit -- an Agent-SDK server plus a live WebSocket UI that drives and observes the pipeline from a bridge-style dashboard. It is a Tier-2 companion: strictly optional, never a dependency of the skill pack, and not installed by the root `setup.js`. It is not part of the published skill set and is not synced to the runtime skill roots -- you install and run it on its own only if you want it. It binds to `127.0.0.1` only and is single-user, single-machine-local by design. See `cockpit/README.md` for how to run it and its full security model.
+
+---
+
 ## Hooks
 
 The following hooks run automatically when the package is installed:
