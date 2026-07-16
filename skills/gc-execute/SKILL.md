@@ -125,6 +125,8 @@ For each wave, dispatch executor agents in parallel with the **entire Execution 
 
 **Pass each row's `Model` value explicitly as the `model` parameter on the Agent tool call** — see `agents/gc-brain.md`'s Worker Dispatch Contract for why this is mandatory.
 
+**Budget mode:** read the plan's frontmatter `budget:` value (absent key or any value other than `low` → treat as `normal`). If `low`, apply the Budget-Mode Mapping (see `agents/gc-brain.md`'s Worker Dispatch Contract) to each executor row's Model value before dispatching each wave.
+
 Each executor:
 - Implements plan steps atomically, one at a time
 - Updates plan frontmatter todo statuses as it completes each step

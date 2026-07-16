@@ -5,7 +5,7 @@ phase: pipeline
 requires:
   - gc-execute
 tags: [review, security, code-quality, pessimistic]
-model: opus
+model: sonnet
 ---
 
 // @ai-rules:
@@ -83,18 +83,20 @@ Select reviewers based on the diff. Always include:
 
 | Reviewer | Model | Agent file | Lens |
 | --- | --- | --- | --- |
-| **Principal** | `opus` | `agents/gc-reviewer.md` | Architecture, contracts, downstream impact |
-| **Correctness** | `opus` | `agents/gc-reviewer.md` | Logic, edge cases, state bugs |
-| **Maintainability** | `opus` | `agents/gc-reviewer.md` | Structure, coupling, naming, complexity |
-| **Plan Alignment** | `opus` | `agents/gc-reviewer.md` | Implementation vs plan todos (skip if no plan) |
-| **Security Exploits** | `opus` | `agents/gc-reviewer.md` | Auth/authz, injection, input validation, IDOR, SSRF in changed code |
-| **Security Audit** | `opus` | `agents/gc-reviewer.md` | Secrets/credentials in diff, OWASP patterns, unsafe crypto, sensitive data in logs |
+| **Principal** | `sonnet` | `agents/gc-reviewer.md` | Architecture, contracts, downstream impact |
+| **Correctness** | `sonnet` | `agents/gc-reviewer.md` | Logic, edge cases, state bugs |
+| **Maintainability** | `sonnet` | `agents/gc-reviewer.md` | Structure, coupling, naming, complexity |
+| **Plan Alignment** | `sonnet` | `agents/gc-reviewer.md` | Implementation vs plan todos (skip if no plan) |
+| **Security Exploits** | `opus` (security lane) | `agents/gc-reviewer.md` | Auth/authz, injection, input validation, IDOR, SSRF in changed code |
+| **Security Audit** | `opus` (security lane) | `agents/gc-reviewer.md` | Secrets/credentials in diff, OWASP patterns, unsafe crypto, sensitive data in logs |
 
-**Pass each row's `Model` value explicitly as the `model` parameter on the Agent tool call** — see `agents/gc-brain.md`'s Worker Dispatch Contract for why this is mandatory. The conditional reviewers below use the same `agents/gc-reviewer.md` persona and `opus` tier as the table above — pass `model: "opus"` explicitly for these too, never left implicit.
+**Pass each row's `Model` value explicitly as the `model` parameter on the Agent tool call** — see `agents/gc-brain.md`'s Worker Dispatch Contract for why this is mandatory. Conditional reviewers use the same `agents/gc-reviewer.md` persona at the `sonnet` tier — pass `model: "sonnet"` explicitly, never left implicit. For a compound Model cell, the token before the parenthetical is the literal value passed as the `model` parameter; the parenthetical is a display/verification marker only, never part of the dispatch value. The paren-form marker `(security lane)` is consumed by `hooks/lib/tier-consistency-check.js` as an exact substring (elevated rows are cross-checked against the persona's `security_lane_model`, and this table's elevated-row count is pinned there) — it is deliberately distinct from the colon-form `(security lane: opus)` documentation cells found in reference tables (e.g. gc-skill-author's); never normalize one form into the other.
+
+**Budget mode:** read the resolved plan's frontmatter `budget:` value (absent key or any value other than `low` → treat as `normal`). If `low`, apply the Budget-Mode Mapping (see `agents/gc-brain.md`'s Worker Dispatch Contract) to every dispatched lens's Model value — table rows and conditional reviewers alike — before dispatch.
 
 **Security reviewers are mandatory** for every run after `/gc-execute`. Only skip if the diff is **docs-only** (markdown, comments, no executable/config changes).
 
-Add conditional reviewers when triggered (all `opus`, `agents/gc-reviewer.md`):
+Add conditional reviewers when triggered (all `sonnet`, `agents/gc-reviewer.md`):
 - Tests changed or production logic without test updates → Testing reviewer
 - API routes, types, serialization → API contract reviewer
 - Retries, timeouts, error handling, async handlers → Reliability reviewer

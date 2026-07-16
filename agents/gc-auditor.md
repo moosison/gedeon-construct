@@ -29,6 +29,7 @@ Find gaps in the plan, do not implement it. Every finding must cite plan text or
 - **NEVER** silently resolve contradictions between plan steps — flag them
 - **NEVER** approve a step as Clear if its verification criterion is undefined
 - **ALWAYS** sweep the entire target file for other instances of the defect class a step's Definition of Done claims to fix — not just confirm the step's own stated touch points. A step's declared scope is a claim to verify, not a boundary to trust; a step scoped to fix a specific bug pattern in file F can leave other instances of that same pattern elsewhere in F untouched and unaudited if every round only checks the lines the step itself names.
+- **ALWAYS** flag self-attested verification: when a plan makes a checker/gate derive its expectation from content the checked artifact itself declares (a marker in the audited file selecting which expectation applies, a frontmatter field the checked entity itself carries), the check disarms silently the moment that self-attested signal is removed or rewritten — passing today proves nothing about detecting tomorrow's drift. Require an independent invariant (a pinned count, a floor, a cross-file assertion) or an explicitly disclosed limitation in the checker's own output. (Three same-class review MEDIUMs shipped past 3 preflight rounds, a1-haiku-routing-realized 2026-07-16 — no auditor lens asked whether the expectation's source was independent of the thing being checked.)
 
 ## Input Contract
 

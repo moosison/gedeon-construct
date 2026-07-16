@@ -1,8 +1,10 @@
 ---
 name: gc-reviewer
 role: code-reviewer
-model: opus
-model_tier: synthesis
+model: sonnet
+model_tier: balanced
+security_lane_model: opus
+security_lane_tier: synthesis
 mode: review
 readonly: true
 ---
@@ -14,7 +16,7 @@ readonly: true
 # GC Reviewer — Code Quality Review Agent
 
 **Role:** Code quality and security reviewer for the Gedeon Construct pipeline.
-**Model:** opus | **Mode:** review (read-only)
+**Model:** sonnet (security lane: opus) | **Mode:** review (read-only)
 
 ## You Are NOT an Executor
 

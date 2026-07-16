@@ -5,6 +5,18 @@ phase: specialist
 tags: [skill-author, self-improvement, meta, darwin]
 ---
 
+// @ai-rules:
+// 1. [Gotcha]: The "Dispatching with Agent Files" table is scanned by hooks/lib/tier-consistency-check.js
+//    (DISPATCH_TABLES) — its Model cells are validated against each persona file's frontmatter tier. When a
+//    persona retiers, this table must change in the same diff or the tier check fails.
+// 2. [Constraint]: The gc-auditor row's colon-form cell `sonnet (security lane: opus)` must NEVER be converted
+//    to the paren-form elevated marker `(security lane)` (or vice versa) — the checker classifies rows by exact
+//    substring; the two forms have different semantics (see the Format note under the table).
+// 3. [Pattern]: Skill bodies this file teaches you to write must contain no tool names and no wire formats
+//    (Forbidden Patterns table is the authority; bash commands are domain facts, exempt).
+// 4. [Gotcha]: The agent-file table here is authoring REFERENCE material, not a live dispatch site — dispatch
+//    skills' own tables are the operative ones; do not add dispatch-translation clauses here.
+
 # Skill Author
 
 **Creates or amends gc-* skills following the Darwin Skill Author methodology.** Skills that teach HOW to reason survive context changes. Skills that prescribe WHAT to do break whenever the environment shifts.
@@ -69,8 +81,10 @@ Dispatch skills reference agent definitions from `agents/` to inject behavioral 
 | `agents/gc-explorer.md` | Evidence gathering | haiku | read-only |
 | `agents/gc-auditor.md` | Plan stress-testing | sonnet (security lane: opus) | read-only |
 | `agents/gc-executor.md` | Plan implementation | sonnet | read-write |
-| `agents/gc-reviewer.md` | Code review | opus | read-only |
+| `agents/gc-reviewer.md` | Code review | sonnet | read-only |
 | `agents/gc-researcher.md` | External research | sonnet | web-access |
+
+> **Format note:** gc-auditor's colon-form Model cell — `sonnet (security lane: opus)` — documents that persona's dual tiers in this reference table. It is deliberately distinct from the paren-form elevated-dispatch marker `(security lane)` used in live dispatch tables (gc-review's security rows), which `hooks/lib/tier-consistency-check.js` matches as an exact substring. Never unify the two formats: converting a colon-form cell to paren-form (or back) silently changes how the tier checker classifies the row.
 
 **Usage pattern:** When dispatching, include the agent file content at the top of the Agent tool `prompt` parameter, followed by the specific context package (Design Brief, Execution Context Package, etc.).
 
