@@ -92,6 +92,38 @@ If no CONTEXT.md found, proceed normally — gc-discuss is optional.
 - What evidence must explorers return before writing atomic steps?
 ```
 
+### Step 1.5: Design-Intent Validation (mockup-first)
+
+One of the first judgments after loading context, before dispatching explorers. Purpose: decide whether
+this plan's work is genuinely **design/redesign-led** (frontend, layout, UI, UX, a visual element) — and
+if so, offer the mockup-first gate before the build is planned.
+
+**The signal is grounded in intent, not a keyword.** Read any UI-intent breadcrumb surfaced into this
+session (a prompt-submit hook flags possible design intent, deliberately over-inclusively) **plus** what
+is already in context — the milestone name, the goal, and the brainstorm. Then judge the *actual* intent.
+A dumb flag cannot tell "redesign the dashboard" (design work) from "redesign this code" (not design
+work); this validation is exactly that disambiguation.
+
+**Acceptance — separate design work from a lexical false-positive** (example-anchored, deliberately
+lighter than a Complex probe):
+
+- Design-relevant → *offer*: "redesign the dashboard", "add a settings panel", "restyle the nav".
+- NOT design work → *proceed silently*: "redesign this parser", "refactor the auth module", "rename this
+  variable".
+- When genuinely ambiguous, bias toward offering — a cheap yes/no for the user, never a block.
+
+**If not design-relevant:** proceed silently to Step 2. The whole check is invisible on non-UI work.
+
+**If design-relevant:** offer, in Gedeon's voice and awaiting confirmation (the house "propose and await"
+idiom, never a hard stop) — recommend running the UI/UX design workflow to produce and **approve a mockup
+before the build is planned or written**, so the plan is authored against an approved design. If locating
+a project design brief is needed, reference an existing search-order definition by name (the UI/UX review
+skill's "Resolve the baseline" step already defines it) — never re-enumerate the probe directories here,
+which would fork a third copy of the same convention.
+
+Under `--auto-pipeline`, surface the recommendation and proceed — this routing decision is advisory (the
+hard gate lives in the design workflow itself, not in this stage); it never blocks the cascade.
+
 ### Step 2: Evidence-Gathering Exploration
 
 **Bootstrap reuse (always-on):** If a gc-bootstrap situational brief or workspace scan is visible in the current conversation context, use it as Explorer A's output — dispatch only Explorers B and C for supplementary coverage. A gc-bootstrap brief is identifiable by the heading `## Bootstrap Context Brief:`. Treat as sufficient Explorer A output only if it contains an affected-file list and tech stack; otherwise dispatch all three explorers.
@@ -194,6 +226,8 @@ Immediately after an atomic step states its insertion point and entry line in pr
 5. **Signal shell dialect** — "executable as written" includes the interpreting shell: a command embedding backslash path literals or escape sequences (e.g. a four-backslash `node -e` probe) mangles under Git Bash/MSYS path translation even when flag-complete. State the intended shell in the command text (e.g. "run via PowerShell") whenever a signal carries backslash literals, or author it with forward-slash paths (Node accepts them on Windows) — and live-probe in the same shell the executor will use. (Confirmed live, plan-artifact-relocation t6, 2026-07-12: the plan's verbatim probe threw `Invalid hexadecimal escape sequence` under Bash; identical logic ran clean via PowerShell.)
 6. **Signal-threshold guarantee** — a counting signal's threshold (e.g. a `grep -c` result compared to N) must be traceable, occurrence by occurrence, to the step's own mandated insertions: for each occurrence the threshold requires, point at the explicit instruction in the step text that obligates it. If the step doesn't obligate the string at a site, either mandate it there explicitly or lower the threshold to what is textually guaranteed — an unguaranteed threshold makes a semantically correct execution fail its own DoD, or pushes the executor to pad prose just to hit the number. Prefer fixed-string form (`grep -cF`) with the full literal marker (formatting characters included), which additionally pins exact cross-file string equality when several parallel executors must write the same token. (Round-1 HIGH, pause-persistence 2026-07-12, two auditors convergent: a >= 5 marker grep with only 2 occurrences mandated by the step's text.) Verify this traceability by actually running the grep command against the current draft text before finalizing the threshold — reasoning about the count on paper is exactly as failure-prone as an auditor's hand-counted citation (a regex-escaped near-lookalike, a markdown span breaking a plain-text match, or simple miscounting across a long paragraph all defeat visual inspection). This applies to the plan author's own signals with no exception, not only to auditor citations. (Confirmed live, park-and-switch 2026-07-14: the orchestrator reproduced this exact bug twice while authoring the fix for one prior instance of it.) **Transcription fidelity (distinct from the threshold check above):** for a fixed-string signal matching a snippet the same step's own text also specifies as replacement/insertion content, the signal string must be transcribed character-for-character identical to that replacement text — including any backtick, escape, or formatting character — not independently re-typed to look equivalent. Live-verifying only the pre-change baseline (e.g. confirming a `0` count) proves the signal isn't vacuously true; it does **not** prove the string matches the actual post-change text — these are two separate transcription risks and both must be closed. Prefer deriving the signal string by direct extraction from the step's own replacement text over re-typing it. (Confirmed live, concurrency-gate-check 2026-07-14: a t2 signal passed its own pre-change baseline check yet still omitted a backtick present in the step's actual instructed replacement text — caught by the executor at implementation time, not by this plan-time check.)
 7. **Signal quoting context** — inside a single-quoted fixed-string pattern, backticks are inert and must be written unescaped (`grep -cF '`token`'`); a backslash-escaped backtick (`\``) there makes the grep search for a literal backslash character and silently return 0 against verbatim-correct content. Escaped backticks belong only inside double-quoted contexts. A signal live-probed in one quoting context (direct invocation vs. nested inside `"$(...)"`) is not proven in the other — and different runners of the "same" written signal can legitimately disagree. When a count contradicts directly-observed file content, re-run with the alternate quoting before trusting either reading. (Confirmed live, a1-haiku-routing-realized 2026-07-16: two plan signals returned false zeros in the orchestrator's shell while executors' runs of the same commands returned the mandated counts — third live shape of the signal-shell-dialect class.)
+
+8. **Negative-guard signal shape** — a signal that verifies a *guard* (an `@ai-rules` "never do X", a "must not claim Y", "never write a Z-shaped fact") must NOT be a raw absence/equality count (`grep -c "X" == 0` / `== 1`). The guard's own prose contains the forbidden token *in order to forbid it*, so the count includes the guard and the signal fails against correct code — a count is blind to polarity, it cannot tell "do X" from "never do X". Author an intent-accurate signal instead: `grep -n "X"` then inspect that every hit is a legitimate use or a negative guard; OR a positive-pattern grep matching only the *violation* form (e.g. an actual "audit ran" claim, never "never claim audit ran"); OR extract the logic to a module with a should-match/should-not-match unit test. (Reproduced twice in one session — mockup-first-design-stage 2026-07-17: `7-pillar == 0` and `gc-uiux-reviewer == 0` both tripped at execute time on the `@ai-rules` guards *forbidding* those very things, then re-flagged at code review; recurrence of the "class-name greps don't guard prose" class. See `feedback_negative_guard_signal_shape`.)
 
 ### Step 7: Write and Present the Plan
 

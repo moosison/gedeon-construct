@@ -6,10 +6,11 @@ tags: [ui, ux, frontend, design, accessibility, taste]
 ---
 
 // @ai-rules:
-// 1. [Pattern]: The body is a 5-phase control loop — brief (setpoints) → direction (control law) → build (plant protection) → critique (feedback). Depth lives in references/, not here; if this file drifts past ~170 lines, push content down a layer.
+// 1. [Pattern]: The body is a 5-phase control loop — brief (setpoints) → direction (control law) → mockup (preview→approve gate) → build (plant protection) → critique (feedback). Depth lives in references/, not here; if this file drifts past ~170 lines, push content down a layer.
 // 2. [Constraint]: The alarm limits in references/anti-slop.md are unconditional — they hold at every dial setting and every direction. A DESIGN.md sets setpoints; it never overrides an alarm limit.
 // 3. [Gotcha]: @ai-rules header gaps accumulate as a running list; propose /gc-shebang on the user's completion signal, never mid-session.
-// 4. [Pattern]: Adjacent disciplines (data-viz, mockup generation) are named as "consult", never absorbed — see the Adjacencies note.
+// 4. [Pattern]: Adjacent disciplines (data-viz, the stitch-design tool) are named as "consult", never absorbed — see the Adjacencies note. Mockup GENERATION is now first-class (Phase 3); stitch-design stays a consult-only alternative medium.
+// 5. [Constraint]: Phase 3 applies the render-ladder REFERENCE only — never dispatch the gc-uiux-reviewer agent, never claim a "7-pillar audit" ran, and never write a gate-verdict- or gate-override-shaped ledger fact from this skill (either would corrupt gc-preflight's Fable-5 stuck-in-STOP streak counter).
 
 # UI/UX Design & Implementation — with Taste
 
@@ -77,7 +78,26 @@ competent default:
 - **Derive, don't decorate.** Every color, type, and layout decision traces back to the brief and the
   subject; if a choice can't be justified from them, it's decoration — cut it.
 
-## Phase 3 — Build
+## Phase 3 — Preview the design (mockup → approve)
+
+Design is approved on a mockup before production code is written — the hard gate that decouples design
+sign-off from implementation.
+
+- **Generate one throwaway mockup** from the `DESIGN.md` — its dials (layout), direction (visual
+  language), tokens (palette/type), and signature element. The floor is a single self-contained HTML file
+  (zero-dependency); the `stitch-design` tool is an optional alternative medium where available, its
+  output treated as reference, never drop-in code. See `references/mockup-first.md`.
+- **See it honestly** — apply the render ladder (`skills/gc-uiux-review/references/render-ladder.md`):
+  climb to the highest tier the environment offers and record a ran/didn't-run manifest, never omitting
+  it. This applies the ladder *technique* here; it does **not** invoke the review skill and must never
+  claim a 7-pillar audit ran.
+- **Alarm limits still hold** — `references/anti-slop.md` applies to the mockup unconditionally.
+- **The gate:** present the rendered mockup with its manifest, honestly scoped — it shows visual/UX/taste
+  fit; it does not validate data correctness or live behavior — and get explicit user approval before
+  Phase 4 (Build) writes any production code. On rejection, iterate the throwaway mockup (cheap); never
+  jump to production code. One mockup by default; offer competing directions only if the user asks.
+
+## Phase 4 — Build
 
 Apply these to every component (the preserved engineering-hygiene floor):
 
@@ -93,7 +113,7 @@ Apply these to every component (the preserved engineering-hygiene floor):
 | Lane assist | Guide with inline, progressive feedback — not modal error walls |
 | Cognitive-load honesty | One control, one meaning; reduce load by hierarchy and disclosure, never by hiding essentials |
 
-## Phase 4 — Critique & hand off
+## Phase 5 — Critique & hand off
 
 1. **Self-review** against the brief (did we hit the setpoints?) and the alarm limits (did any trip?).
 2. **Interaction audit** — walk every action: feedback under ~100ms, transitions calm and purposeful,
@@ -105,8 +125,9 @@ Apply these to every component (the preserved engineering-hygiene floor):
 
 - **Charts, gauges, meters, data color** — a discipline of its own; consult the `dataviz` skill rather than
   re-deriving palettes and mark specs here.
-- **Throwaway high-fidelity mockups** — `stitch-design` generates framework/Tailwind screens as *mockup
-  inspiration*; treat its output as reference, not drop-in code for a zero-dependency target.
+- **Throwaway high-fidelity mockups** — mockup generation is now a first-class step of this skill
+  (Phase 3, self-contained HTML). `stitch-design` remains an *opt-in alternative medium* where available —
+  its framework/Tailwind output is reference/inspiration, never drop-in code for a zero-dependency target.
 
 ## Anti-Patterns (reject)
 
