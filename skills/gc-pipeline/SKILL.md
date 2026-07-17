@@ -52,7 +52,8 @@ A structured pipeline for AI-assisted software development, from project incepti
 | `/gc-cynefin` | Domain classification needed before planning |
 | `/gc-probe` | Unknown facts that need discovery before acting |
 | `/gc-platform-review` | Reviewing a platform or API design |
-| `/gc-ui` | Building or reviewing user interfaces |
+| `/gc-uiux` | Designing or building user interfaces (taste-aware) |
+| `/gc-uiux-review` | Visual/UX/taste audit of a built interface |
 | `/gc-shebang` | Generating or updating `@ai-rules` file headers |
 | `/gc-debug` | Investigating a bug with scientific method |
 | `/gc-skill-author` | Writing or amending gc-* skill files |

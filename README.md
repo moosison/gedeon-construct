@@ -63,7 +63,7 @@ State is tracked per-project at `.claude/gc-pipeline.json`. Hooks remind you of 
 
 ## Skills
 
-The Construct ships 28 skills, invoked as `/gc-*` slash commands.
+The Construct ships 29 skills, invoked as `/gc-*` slash commands.
 
 ### Pipeline -- 6-stage workflow + entry points
 
@@ -101,7 +101,8 @@ The Construct ships 28 skills, invoked as `/gc-*` slash commands.
 | `gc-debug`           | Scientific debugging: hypothesis -> probe -> fix -> verify                            |
 | `gc-lean`            | YAGNI scope gate; flags speculative steps before gc-execute                           |
 | `gc-debt`            | Read path over the `.construct/DEBT.json` lean-comment ledger the Stop hook maintains |
-| `gc-ui`              | UI/UX design and frontend implementation mode                                         |
+| `gc-uiux`            | UI/UX design + implementation mode (taste-aware, distinctive not templated)           |
+| `gc-uiux-review`     | Visual/UX/taste audit of rendered interfaces (complements gc-review)                  |
 | `gc-platform-review` | Hohpe Platform Strategy 7-C audit                                                     |
 | `gc-shebang`         | Generate/update `@ai-rules` headers in code files                                     |
 
