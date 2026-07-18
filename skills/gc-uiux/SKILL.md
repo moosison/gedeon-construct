@@ -41,7 +41,10 @@ Design starts from the user, not the screen. Establish and record (in `DESIGN.md
   matrix for the primary components (see `references/ux.md`).
 - **Setpoints** — the three dials (variance, motion, density) and a **direction** (a named preset or a
   custom direction drawn from the subject's world), plus **anti-references** — what this must *not* look
-  like (see `references/visual-directions.md`).
+  like (see `references/visual-directions.md`). Direction is the costliest setpoint to reverse — a full
+  build in the wrong direction is the most expensive rework there is. When it is genuinely unsettled,
+  record it as a *candidate* (or two), not a locked choice, and let the Phase 3 mockup gate — the cheapest
+  place to actually see a direction — be where it is committed.
 
 If a `DESIGN.md` already exists, read it first and ask only what it doesn't answer; otherwise write a new
 one at the **project root** (the review skill's first search location, so the audit resolves it). Never
@@ -81,7 +84,10 @@ competent default:
 ## Phase 3 — Preview the design (mockup → approve)
 
 Design is approved on a mockup before production code is written — the hard gate that decouples design
-sign-off from implementation.
+sign-off from implementation. Spend the gate where reversal is expensive: an ambiguous, high-rework choice
+(direction, palette, core layout) earns a full mockup — and competing options when the choice itself is
+what's unsettled — while an obvious, low-risk, easily-reversed composition earns only a quick confirmation,
+not ceremony. The gate's weight tracks the decision's rework-risk, not a fixed ritual on every change.
 
 - **Generate one throwaway mockup** from the `DESIGN.md` — its dials (layout), direction (visual
   language), tokens (palette/type), and signature element. The floor is a single self-contained HTML file
@@ -95,7 +101,9 @@ sign-off from implementation.
 - **The gate:** present the rendered mockup with its manifest, honestly scoped — it shows visual/UX/taste
   fit; it does not validate data correctness or live behavior — and get explicit user approval before
   Phase 4 (Build) writes any production code. On rejection, iterate the throwaway mockup (cheap); never
-  jump to production code. One mockup by default; offer competing directions only if the user asks.
+  jump to production code. One mockup once the direction is settled; when direction or palette is the
+  unsettled, high-rework axis, present competing options here — the mockup is the cheapest place to resolve
+  it, cheaper than building one direction and redoing it.
 
 ## Phase 4 — Build
 

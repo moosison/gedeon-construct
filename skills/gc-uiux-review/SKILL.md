@@ -56,6 +56,16 @@ Dispatch a **single** worker at **sonnet** tier, briefed with `agents/gc-uiux-re
 target files, the resolved baseline, the selected stack pack, and the render tier + didn't-run disclosure.
 (One agent, not a parallel panel — there is no in-repo parallel-dispatch pattern to mirror here.)
 
+**Resolve the reviewer persona portably.** The brief lives with the installed suite, not at a fixed
+project-relative path — look for it where this skill's own siblings are installed (the runtime skills/agents
+location), not only in the current project's tree; an installed consumer project has no `agents/` of its own.
+If the persona genuinely cannot be resolved, do **not** silently fold the audit back into the same session
+that authored the design — that discards the independent-reviewer property the two-tier authority exists to
+protect (an author scoring their own work is the self-attestation this skill is built to avoid). Either
+dispatch a fresh worker with the neutral-core pillar rules inlined, **or** state plainly in the report that
+no separate reviewer persona was found and the pass is a non-independent self-audit — never let that
+degradation pass undisclosed.
+
 > Dispatch guidance: worker = `agents/gc-uiux-reviewer.md`, model = `sonnet`. gc-skill-author mandates a
 > dispatch-guidance block for *pipeline* skills; this skill is `specialist`, so the block is present as
 > prudent practice because it does dispatch a subagent — not because it is a pipeline stage.
@@ -69,6 +79,8 @@ is never acceptable. On completion, if any audited file lacks an `@ai-rules` hea
 ## Anti-Patterns
 
 - Claiming a visual pass from a code-only read without disclosing what could not be checked.
+- Silently self-auditing when the reviewer persona can't be dispatched — an inline fallback by the design's
+  own author is author-biased; disclose it as a non-independent pass, or don't claim a review ran.
 - Assuming a fixed dev-server port or a specific browser tool instead of the project's own run conventions.
 - Letting a `DESIGN.md` waive an alarm limit (the two tiers are independent by design).
 - Duplicating `gc-review`'s code/security lens here — this axis is visual/UX/taste only.

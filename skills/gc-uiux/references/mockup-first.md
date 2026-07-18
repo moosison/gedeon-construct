@@ -14,8 +14,11 @@ approval from implementation.
 - **Optional alternative: the `stitch-design` tool**, where the environment offers it. Its framework/
   Tailwind screens are *reference/inspiration* — read them for layout and hierarchy ideas, never paste
   them in as drop-in code for a zero-dependency target.
-- One mockup by default. Offer two or three competing directions only when the user asks — generating
-  variants every time is wasted work once the direction is already known.
+- One mockup once the direction is already known — generating variants every time is wasted work. But when
+  the direction (or palette) is genuinely *unsettled* and expensive to reverse, present two or three
+  competing options here rather than committing upfront: the mockup is the cheapest place to choose a
+  direction, far cheaper than building one and redoing it after. Match the gate's weight to the decision's
+  rework-risk — an obvious, low-risk composition needs only a quick confirmation, not a full throwaway build.
 
 ## Deriving the mockup from `DESIGN.md`
 
