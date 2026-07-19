@@ -84,7 +84,7 @@ The Construct ships 29 skills, invoked as `/gc-*` slash commands.
 | Skill            | Purpose                                                     |
 |------------------|-------------------------------------------------------------|
 | `gc-pipeline`    | Overview: all stages, iteration rules, hand-offs            |
-| `gc-new-project` | Initialize `.construct/` tree (PROJECT.md, ROADMAP.md, ...) |
+| `gc-new-project` | Initialize `.construct/` tree; capture project vision + opt-in build research |
 | `gc-milestone`   | Add a milestone to ROADMAP.md                               |
 | `gc-progress`    | Show completion status from `.construct/` files             |
 | `gc-status`      | Cross-project dashboard from the project registry           |
@@ -135,6 +135,7 @@ Stateless persona files in `agents/`. Each is dispatched by a skill as a generic
 | `gc-executor.md`          | gc-execute                                | Wave-based executor with WIP cap and closed-loop verify                              |
 | `gc-reviewer.md`          | gc-review                                 | Code reviewer: correctness, security, architecture                                   |
 | `gc-researcher.md`        | Various                                   | Research agent with web access for external knowledge                                |
+| `gc-inception-researcher.md` | gc-new-project                         | Project-inception research: needs a DB? which architecture shape? unsurfaced reqs    |
 
 ---
 

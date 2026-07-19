@@ -19,7 +19,31 @@ Ask the user (if not provided):
 3. **Initial milestones** (optional) — rough phases, or "discover them later"
 4. **Team size** — solo (1 contributor), small (2–5), or full (5+). Used to set the branch strategy.
 
-> **Roadmapped enhancement (not yet implemented):** these four quick questions are planned to be superseded by real scope capture — complexity drivers, integrations, known unknowns, constraints, and whether the project needs parallel workstreams — feeding a time/cost estimate. See `Deep Scope Discovery & Project Estimation` in `.construct/ROADMAP.md`. Deliberately queued last: gated on the `Instrument Repairs` milestone and on external-project cost calibration.
+#### Vision Capture
+
+Before writing the planning tree, draw out the project's *vision* — a guided conversation, not a form. Elicit, adapting to what the user has already said (don't interrogate a fixed list):
+
+- **Intended features** — what the project should actually do, at feature granularity, not just the one-line goal.
+- **Non-goals** — what it deliberately will NOT do. Naming non-goals now prevents scope creep later.
+- **Workstreams dimension** — does the project need parallel tracks (independently-progressing bodies of work), or is it a single linear build? Scope this explicitly here rather than discovering it ad hoc mid-project.
+
+Capture the vision in the conversation; it feeds `REQUIREMENTS.md` (Step 2) and the optional research in Step 1.5. Keep it proportionate — a tiny tool needs a light touch; a broad system earns a fuller draw-out.
+
+> **Roadmapped enhancement (not yet implemented):** deeper *scope estimation* — complexity drivers, integrations, known unknowns, and a projected time/cost — is not the vision draw-out above. That estimation half lives in `Deep Scope Discovery & Project Estimation` (`.construct/ROADMAP.md`), deliberately queued last: gated on the `Instrument Repairs` milestone and on external-project cost calibration. (Vision capture and best-practice research themselves now ship here, in this skill.)
+
+### Step 1.5: Best-Practice Research (opt-in)
+
+After vision capture, **offer** best-practice build research — the user opts in; trivial projects skip it. On opt-in, research how best to build *this* project's vision: whether it needs a database/backend at all, which architecture shape fits, and requirements the user hasn't surfaced.
+
+Pass the vision (features, non-goals, workstreams) **and the team size** (from Step 1) to the research worker. **Pass the Model cell below as the `model` parameter on the dispatch** — per `agents/gc-brain.md`'s Worker Dispatch Contract, an omitted model silently runs the worker at the wrong tier.
+
+| Research lane | Model | Agent file |
+| --- | --- | --- |
+| Inception research | `sonnet` | `agents/gc-inception-researcher.md` |
+
+The worker is **read-only** and returns findings as candidate `REQUIREMENTS.md` entries — each a discrete claim. **The user confirms each finding before it binds** (probe-before-assume: every extraction is a claim to verify, not a fact to accept). A **"no database / no framework / no dependency needed"** conclusion is a valid, bindable outcome — the research must be able to rule infrastructure OUT, not only recommend it in. The worker never writes project files; Step 2 writes the confirmed findings into `REQUIREMENTS.md`.
+
+**Existing codebase?** Inception research is a *greenfield* activity — it asks *whether* to add a database and *which* architecture to pick, decisions an existing codebase has already made. If you're adopting the pipeline onto code that already exists, **skip the research** and run `/gc-bootstrap` to survey the existing stack instead. (A dedicated brownfield *survey* mode — research the existing architecture rather than recommend a new one — is a planned follow-on; see this milestone's run-scenario coverage phase.)
 
 ### Step 2: Initialize Planning Tree
 
@@ -52,6 +76,8 @@ Active
 ## Out of Scope
 - {to be defined}
 ```
+
+> **Populating from Step 1.5:** if the opt-in research produced confirmed findings, populate each section from them instead of leaving the stub — replace the `- [ ] {to be defined}` placeholder (Functional / Non-Functional) or the bare `- {to be defined}` (Out of Scope) with that section's confirmed findings; leave the placeholder where a section has none. The worker's architecture-shape / needs-a-database verdict binds under **Non-Functional Requirements** — it has no separate section.
 
 **`.construct/ROADMAP.md`**
 ```markdown
