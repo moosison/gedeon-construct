@@ -40,6 +40,10 @@ Whichever resolves is passed to the reviewer as the setpoint baseline. Independe
 
 Detect the frontend stack and select the matching opt-in detector pack to hand the reviewer:
 
+- React Native / NativeWind (a direct `package.json` dependency on `react-native`, `expo`, `nativewind`, or
+  `react-native-web`) → `references/pack-rn-nativewind.md`. **Check this before Tailwind** — NativeWind styles
+  via Tailwind class names and often ships a `tailwind.config.*`, so a bare utility-class signal would misroute
+  an RN project to the web pack.
 - Tailwind (a `tailwind.config.*` or utility classes present) → `references/pack-tailwind.md`.
 - Plain CSS (stylesheets, no utility framework) → `references/pack-vanilla-css.md`.
 - Neither/unknown → neutral-only (pillars audited by intent, no stack-specific detectors).

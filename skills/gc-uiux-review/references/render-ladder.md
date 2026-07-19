@@ -17,6 +17,9 @@ review.
    directly.
 2. **Static open** — if the output is static HTML/CSS with no server, open the file directly in a browser and
    capture. Most visual checks still apply; anything requiring live data or interaction is downgraded.
+   *Stack note:* this rung assumes a static HTML/CSS artifact. A react-native-web (Expo/RN Web) app has no
+   static HTML build, so this rung does not apply for that stack — the ladder is behavioral-or-code-only there,
+   skipping directly from Behavioral to Code-only.
 3. **Code-only** — if neither is possible this session, audit from the source. Copywriting, state coverage,
    token usage, and structure are all checkable; anything about *rendered* appearance (real contrast, real
    spacing rhythm, actual motion) **cannot** be — and the report must say so, per pillar.
