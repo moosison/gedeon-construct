@@ -155,10 +155,11 @@ Every project using the Gedeon Construct maintains a `.construct/` directory:
   phases/          <- per-phase decision records
   DEBT.json        <- ledger of lean-comment technical debt, maintained by the Stop hook
   USAGE.json       <- token/cost/time rollup across sessions
+  USAGE-BY-PLAN-SLUG.json <- per-milestone cost buckets (split out of USAGE.json for the cockpit's hot-path read)
   usage/           <- per-session usage files
   brief-cache.json <- cached briefing data read by /gc-morning
   ledger/          <- Verified-Facts Ledger (append-only stage-outcome facts)
-  ADVISORY-*.md    <- dated external consult records
+  advisories/      <- dated external consult records (Fable-5 advisories + handoffs)
 ```
 
 Plan files live in-project at `.construct/plans/` (gitignored working state); older artifacts fall back to the legacy global store (`~/.claude/gedeon/plans/{project-slug}/`, then flat root). Pipeline runs may execute in isolated git worktrees under `.worktrees/`. If work finishes without a feature branch, `gc-eop` creates `feature/{plan-slug}` at close time before committing -- nothing lands on `main` directly.
