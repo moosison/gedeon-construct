@@ -214,6 +214,8 @@ Section 1 (Confidence Dashboard) format contract: include a standalone line, exa
 
 **evidenceFile form:** workspace-relative (e.g. `.construct/plans/{plan-slug}-Pre-Flight-Review_{YYYY-MM-DD_HHMM}.md`), never an absolute path — it resolves via `hashFile`'s workspace root (`cwd`), the first of the two roots tried.
 
+**Worktree-split sessions:** if code edits are happening in a git worktree while the ledger itself stays in the main repo, a bare relative `evidenceFile` like `skills/foo/SKILL.md` silently hashes the *main repo's* copy, not the worktree's edited one — no error, just a wrong hash. Use a relative path that traverses from the ledger-storage cwd into the worktree instead (e.g. `.claude/worktrees/{slug}/skills/foo/SKILL.md` — valid since a worktree nests inside the main repo's own directory tree). Spot-check with a direct `hashFile` comparison the first time in a new split-workspace session.
+
 **Legacy-resolved plan-runs:** if this plan-run resolved via gc-plan Step 7's step-6 legacy fallback (its artifact ladder landed in the global store), `evidenceFile` keeps passing that location's path as-is — the two-root fallback (`cwd`, then `PLAN_STORE_ROOT`) still hashes it. Old facts recorded this way age out naturally rather than being retrofitted; new facts are always workspace-relative going forward.
 
 `sourceSession` is deliberately absent from this fact: `ledger-cli.js` is invoked here as a standalone CLI process, not as a Claude Code hook, so there is no session id to populate it with — this is a resolved design decision, not an oversight.

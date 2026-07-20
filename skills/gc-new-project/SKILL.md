@@ -10,7 +10,7 @@ tags: [project, lifecycle, planning, init]
 // 2. [Gotcha]: Doc/tool detection uses only generic, tool-neutral content-shape and cue-phrase signals — never hardcode a specific tool's name, branding, or folder convention anywhere in this file or in references/brownfield.md / references/migration.md.
 // 3. [Pattern]: For brownfield/migration, Step 1.5's dispatch fires early — the moment the mode is confirmed in Mode Detection, before Vision Capture — not when the reader reaches the Step 1.5 heading. Reaching Step 1.5 in normal reading order describes only what greenfield does.
 // 4. [Pattern]: Reference files carry mode-specific knowledge; this file carries the dispatch mechanism only. Step 1.5's single shared 3-row dispatch table must stay in this file — tier-consistency-check.js scans exactly 7 whitelisted SKILL.md paths, never references/*.md.
-// 5. [Gotcha]: A confirmed monorepo scope subtree must be threaded through both Step 1.5's dispatch brief and Step 2's target directory — references/brownfield.md and references/migration.md each define their own Monorepo Scope Boundary section for how the survey/import applies it.
+// 5. [Gotcha]: A confirmed monorepo scope subtree must be threaded through both Step 1.5's dispatch brief and Step 2's scan root — references/brownfield.md and references/migration.md each define their own Monorepo Scope Boundary section for how the survey/import applies it. The scan root is NOT always the final target directory: brownfield's rebuild-beside branch (Step 2) redirects the actual target to a new sibling directory, leaving the scan root itself frozen as reference.
 // 6. [Constraint]: Symlink resolution during Doc Detection must verify the resolved target stays within the workspace/scope root before reading it — skip and disclose if it escapes; never follow a symlink out of scope.
 
 # New Project
@@ -83,6 +83,12 @@ the scope root for everything downstream in this same invocation: `.construct/` 
 subtree rather than the workspace root, and the subtree path is carried forward as an explicit
 scope parameter in Step 1.5's dispatch brief, so the survey or extraction reads only within it.
 
+**Superseded for brownfield's rebuild-beside case:** this `.construct/`-location default is the
+answer only when brownfield's Vision Capture rebuild-beside question (see Vision Capture below)
+either doesn't apply or resolves to modify-in-place — when it resolves to rebuild-beside, Step 2's
+target-directory rule governs the final `.construct/` location instead (a new sibling directory,
+not this subtree), superseding this sentence for that case.
+
 **Resolving the mode** (all four (doc, code) combinations, so this list is the complete decision
 table on its own — no combination is resolved only by a paragraph elsewhere):
 - Doc source found, no code found ⇒ **migration**.
@@ -130,6 +136,20 @@ Before writing the planning tree, draw out the project's *vision* — a guided c
 **Branching by detected mode** (see Mode Detection above):
 
 - **Brownfield.** The elicitation still runs — reframed as "what to build on top of / alongside what already exists" rather than a from-scratch feature list — informed by the behavior-surface survey Step 1.5 already gathered (per Mode Detection's trigger-timing note, that dispatch has already run by the time this section is reached for brownfield).
+  - **Modify-in-place vs. rebuild-beside (detect from the stated vision, then confirm):** read the
+    vision statement just elicited for rebuild/replace/redesign-shaped language ("rebuild",
+    "redesign", "replace", "start over on") versus extend/add-to-shaped language ("add",
+    "integrate", "extend", "on top of"). Surface that read as a claim, not a fact — confirm
+    explicitly with the user: keep building inside the surveyed folder, or treat the surveyed
+    folder as frozen historical reference while the new build happens in a sibling directory
+    beside it (the same "everything outside `.construct/` is frozen reference" posture Mode
+    Detection already applies to a co-detected doc source, extended here to the whole surveyed
+    code source). This mirrors Mode Detection's own "detect mechanically, then confirm with the
+    user" pattern rather than asking a disconnected toggle question. If the vision statement reads
+    as neither clearly one-shaped nor the other (mixed or genuinely ambiguous language), default
+    the suggested read to modify-in-place — the lower-blast-radius option — and let the user's
+    confirmation correct it, rather than guessing rebuild-beside from weak signal. Record the
+    confirmed answer; Step 2's target-directory rule consumes it.
 - **Brownfield + docs detected.** When Mode Detection also found a planning-doc tree, the elicitation additionally surfaces doc-derived items the code survey didn't corroborate, as explicit planned-enhancement prompts: "the existing docs mention {item}, not found in the current code — still part of your vision?" This is an input to the same conversation, not a separate step — the user's answer determines whether it becomes a candidate, never the doc's claim alone.
 - **Migration.** Skipped by default — the source docs already state the vision, and this mode only ever applies when no code exists yet — with a one-line offer to still run a light pass for scope not captured in the source.
 - **Greenfield.** Unchanged — the elicitation above runs exactly as written.
@@ -144,7 +164,7 @@ This heading defines the dispatch table and instructions for all three modes —
 
 **If greenfield:** After vision capture, **offer** best-practice build research — the user opts in; trivial projects skip it. On opt-in, research how best to build *this* project's vision: whether it needs a database/backend at all, which architecture shape fits, and requirements the user hasn't surfaced. Pass the vision (features, non-goals, workstreams) **and the team size** (from Step 1) to the research worker, dispatched via the Inception research row below.
 
-**If brownfield:** Dispatch the Brownfield survey row below, with lens and brief content sourced from `references/brownfield.md`. If Mode Detection's Monorepo scope boundary question was raised and answered, pass that confirmed subtree as an explicit scope parameter in the dispatch brief — `references/brownfield.md`'s own Monorepo Scope Boundary section governs how the survey applies it. After the dispatch returns, translate its Output Contract into the candidate Functional/Non-Functional/Out-of-Scope shape per `references/brownfield.md`'s own translation instructions before presenting candidates for confirmation — this hand-off is a required part of Step 1.5, not left implicit in the reference file alone.
+**If brownfield:** Dispatch the Brownfield survey row below, with lens and brief content sourced from `references/brownfield.md`. If Mode Detection's Monorepo scope boundary question was raised and answered, pass that confirmed subtree as an explicit scope parameter in the dispatch brief — `references/brownfield.md`'s own Monorepo Scope Boundary section governs how the survey applies it. After the dispatch returns — recall from `@ai-rules` item 3 that this same Step 1.5 dispatch is what fires early, before Vision Capture, not the other way around — and brownfield's Vision Capture (Step 1's Brownfield branch, read and answered by the user only once this dispatch has already returned) has captured the stated vision, translate the dispatch's Output Contract — informed by that now-stated vision — into the candidate Functional/Non-Functional/Out-of-Scope shape per `references/brownfield.md`'s own translation instructions before presenting candidates for confirmation. This three-step hand-off (dispatch → Vision Capture → translate) is a required part of Step 1.5, not left implicit in the reference file alone.
 
 **If migration:** Dispatch the Migration import row below, with brief content sourced from `references/migration.md`. If Mode Detection's Monorepo scope boundary question was raised and answered, pass that confirmed subtree as an explicit scope parameter in the dispatch brief — `references/migration.md`'s own Monorepo Scope Boundary section governs how the import applies it. After the dispatch returns, translate its Output Contract into the candidate Functional/Non-Functional/Out-of-Scope shape per `references/migration.md`'s own translation instructions before presenting candidates for confirmation — this hand-off is a required part of Step 1.5, not left implicit in the reference file alone.
 
@@ -156,14 +176,31 @@ This heading defines the dispatch table and instructions for all three modes —
 | Brownfield Survey | haiku | agents/gc-explorer.md |
 | Migration Import | haiku | agents/gc-explorer.md |
 
-The worker is **read-only** and returns findings as candidate `REQUIREMENTS.md` entries — each a discrete claim. **The user confirms each finding before it binds** (probe-before-assume: every extraction is a claim to verify, not a fact to accept). A **"no database / no framework / no dependency needed"** conclusion is a valid, bindable outcome for greenfield's inception research — the research must be able to rule infrastructure OUT, not only recommend it in. No worker writes project files directly; Step 2 writes the confirmed findings into `REQUIREMENTS.md`.
+The worker is **read-only** and returns findings as candidate `REQUIREMENTS.md` entries — each a discrete claim. **The user confirms each finding before it binds** (probe-before-assume: every extraction is a claim to verify, not a fact to accept) — confirmation spans a plain accept, a reject/drop, or an edit to the candidate's own substance (e.g. correcting a detail the survey got wrong, such as an endpoint that is being regenerated rather than preserved as-is), all equally expected outcomes; an edited candidate binds in its user-corrected form, never the worker's original wording. A **"no database / no framework / no dependency needed"** conclusion is a valid, bindable outcome for greenfield's inception research — the research must be able to rule infrastructure OUT, not only recommend it in. No worker writes project files directly; Step 2 writes the confirmed findings into `REQUIREMENTS.md`.
 
 ### Step 2: Initialize Planning Tree
 
-Target directory: the current directory, unless Mode Detection's Monorepo scope boundary question
-was raised and answered — in that case, the confirmed subtree from that answer, not the invocation
-directory (per Mode Detection's "that subtree becomes the scope root for everything downstream"
-rule).
+Target directory: start from the current directory, narrowed to the confirmed monorepo subtree if
+Mode Detection's Monorepo scope boundary question was raised and answered (per Mode Detection's
+"that subtree becomes the scope root for everything downstream" rule) — call this the **scan
+root** (the same directory Mode Detection calls the scope root when a monorepo subtree applies,
+or the current directory otherwise).
+
+- **Rebuild-beside branch:** if brownfield's Vision Capture "modify-in-place vs. rebuild-beside"
+  question was confirmed as rebuild-beside, the actual target directory is a new sibling directory
+  created next to the scan root, and the scan root itself stays untouched, frozen reference only.
+- **Naming the sibling directory:** default to Step 1's already-collected Project name — this is
+  the same project, so its already-answered name reuses cleanly rather than re-asking a question
+  already answered. Confirm this default with the user rather than silently assuming it; if they
+  want a different name for the sibling directory specifically, use that instead.
+- **Sibling-directory name collision:** if a directory already exists at that sibling location,
+  surface it and ask before proceeding — offer either reusing the existing directory as-is, or
+  choosing a different name for the new target directory. Never rename the pre-existing directory
+  itself, which may hold unrelated content outside this project's control. The same
+  never-silently-overwrite posture Step 2's existing pre-existing-`.construct/` guard already takes
+  toward a collision.
+- **Otherwise** (modify-in-place, or the question doesn't apply outside brownfield): the target
+  directory IS the scan root, unchanged from today's behavior.
 
 **Existing-tree guard:** if `.construct/` already exists at the target directory, this step would
 overwrite it — confirm with the user before proceeding, rather than silently recreating any file
