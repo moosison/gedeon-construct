@@ -46,6 +46,7 @@ Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (t
 - **Selection walk (Pause-variant discrimination):** take the FIRST file whose first line is NOT `**Report Type: Pause**` as the outcome file used for §6's rung data. The newest `**Report Type: Pause**` record, if any exists, is surfaced separately in §6 as an informational line only, never as the rung-data source.
 - **Boundary case:** if a `**Report Type: Pause**` record is newest but an older marker-free (final) outcome exists, the older final outcome is used for §6's rung data and will typically be flagged stale by the staleness check below — this is correct, since the diff under review post-dates it.
 - **Staleness:** if the chosen outcome file's own mtime predates the diff under review (i.e. the diff was touched after the outcome file was written), treat it as stale: still surface it in Context Package §6, but flag it there as `(stale — predates the diff under review)` rather than presenting it as current data.
+- **Path to Green carry-forward:** read the latest pre-flight report's own "Path to Green" section (`gc-preflight/SKILL.md`'s report section 9). If it lists any disclosed-but-non-blocking follow-up items, carry each forward into Context Package §1 by name, verbatim — disclosure at pre-flight is not the same as resolution, and nothing else in this pipeline re-checks a deferred item before it ships (see `feedback_persona_contract_completeness` memory, both live occurrences of this exact gap surfaced only at this stage). If the Path to Green section is absent or empty, state that explicitly rather than omitting the bullet.
 
 ```markdown
 ## Code Review Context Package: {plan-slug}
@@ -54,6 +55,7 @@ Resolve {plan-dir} per the Project-Slug & Plan-Directory Resolution Procedure (t
 - Plan path, overview
 - Full plan text (complete file)
 - Pre-flight report summary if available
+- Latest pre-flight report's Path to Green items, carried forward by name (or "none disclosed" — see Step 2's lead-in)
 
 ### 2. Execution Scope
 - Which plan todos were implemented
@@ -93,6 +95,8 @@ Select reviewers based on the diff. Always include:
 **Pass each row's `Model` value explicitly as the `model` parameter on the Agent tool call** — see `agents/gc-brain.md`'s Worker Dispatch Contract for why this is mandatory. Conditional reviewers use the same `agents/gc-reviewer.md` persona at the `sonnet` tier — pass `model: "sonnet"` explicitly, never left implicit. For a compound Model cell, the token before the parenthetical is the literal value passed as the `model` parameter; the parenthetical is a display/verification marker only, never part of the dispatch value. The paren-form marker `(security lane)` is consumed by `hooks/lib/tier-consistency-check.js` as an exact substring (elevated rows are cross-checked against the persona's `security_lane_model`, and this table's elevated-row count is pinned there) — it is deliberately distinct from the colon-form `(security lane: opus)` documentation cells found in reference tables (e.g. gc-skill-author's); never normalize one form into the other.
 
 **Budget mode:** read the resolved plan's frontmatter `budget:` value (absent key or any value other than `low` → treat as `normal`). If `low`, apply the Budget-Mode Mapping (see `agents/gc-brain.md`'s Worker Dispatch Contract) to every dispatched lens's Model value — table rows and conditional reviewers alike — before dispatch.
+
+**Path to Green closure check (Principal lens, mandatory when Context Package §1 carries any items):** if Context Package §1 lists any Path to Green items carried forward from pre-flight, the Principal reviewer's dispatch must instruct it to state, by name, whether the shipped diff actually closes each one (closed/still-open, with file:line evidence) — never accept pre-flight's disclosure as resolution. A still-open item reports as a finding at the same severity pre-flight itself implied (or MEDIUM minimum if pre-flight didn't state one), through the normal Findings table — no new severity mechanism needed.
 
 **Security reviewers are mandatory** for every run after `/gc-execute`. Only skip if the diff is **docs-only** (markdown, comments, no executable/config changes).
 

@@ -28,10 +28,22 @@ Gather evidence, not plans. Describe what IS in the codebase, not what SHOULD be
 
 ## Input Contract
 
-1. **Exploration Design Brief** — 7-section structure with goals, constraints, suspected files, open questions
-2. **Lens assignment** — one of: Deep trace / Breadth scout / Correctness probe
+1. **Exploration Design Brief** — 7-section structure with goals, constraints, suspected files,
+   open questions (`gc-bootstrap`, `gc-plan` dispatches). **Reference-file-supplied brief
+   (`gc-new-project`'s Brownfield Survey / Migration Import lenses):** these two lenses have no
+   `gc-plan`-style numbered brief — the dispatching skill's own reference file
+   (`skills/gc-new-project/references/brownfield.md` or `migration.md`) stands in for the brief in
+   full. Treat that file's named deliverable (the behavior-surface inventory, or the doc-extraction
+   candidate set) as this contract's Section-5 equivalent, and answer it directly in the Output
+   Contract below rather than by section-number cross-reference.
+2. **Lens assignment** — a named lens that must match a row the dispatching skill's own `SKILL.md`
+   defines for this invocation — e.g. Deep trace / Breadth scout / Correctness probe
+   (`gc-bootstrap`, `gc-plan`), Brownfield Survey / Migration Import (`gc-new-project`); this list
+   is illustrative, not a fixed enumeration maintained here. No automated check verifies a lens name
+   against its dispatching table — the dispatching skill's table is the sole authority.
 
-Answer every question in Section 5 (Open Questions) with code evidence.
+Answer every question in Section 5 (Open Questions) with code evidence, or — for a
+reference-file-supplied brief — the reference file's named deliverable, with evidence.
 
 ## Output Contract
 
@@ -51,7 +63,10 @@ Answer every question in Section 5 (Open Questions) with code evidence.
 [assumptions from the Brief you could NOT verify; things that contradict the Brief]
 
 #### Open Questions — Answers
-[numbered to match Brief Section 5; answer each with code citation or "NOT FOUND"]
+[numbered to match Brief Section 5, when the brief uses `gc-plan`'s numbered-question format;
+answer each with code citation or "NOT FOUND". For a reference-file-supplied brief (no numbered
+list — see Input Contract item 1), this section instead directly delivers the reference file's
+named output deliverable, with citation.]
 
 #### Cynefin Pre-Classification
 [per change area: Clear / Complicated / Complex + one-sentence rationale]
