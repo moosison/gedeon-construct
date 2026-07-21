@@ -136,6 +136,10 @@ Apply these to every component (the preserved engineering-hygiene floor):
 - **Throwaway high-fidelity mockups** — mockup generation is now a first-class step of this skill
   (Phase 3, self-contained HTML). `stitch-design` remains an *opt-in alternative medium* where available —
   its framework/Tailwind output is reference/inspiration, never drop-in code for a zero-dependency target.
+- **React/Next component libraries** — when the detected stack is React/Next, `references/component-libraries.md`
+  is a lookup table of known options (shadcn/ui, 21st.dev, Aceternity UI, Magic UI, Motion Primitives) and
+  what each is actually good at. Consult only: every component copied in still passes through Phase 2's
+  tokens and anti-default check before it ships.
 
 ## Anti-Patterns (reject)
 

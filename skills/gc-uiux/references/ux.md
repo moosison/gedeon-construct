@@ -39,6 +39,24 @@ Guide toward the correct action with inline, progressive feedback — inline val
 real-time previews — rather than blocking with modal error walls. Correct the user in place; don't stop
 them at a gate. (This is the same railway-not-guardrail principle the platform doctrine applies to systems.)
 
+## Forms — where friction actually hides
+
+Forms are where the lane-assist principle above meets its most concrete test cases. Apply explicitly:
+
+- **Submit-button state is a signal, not decoration.** Disable it until the form is genuinely submittable,
+  mark required fields so the reason is never a mystery, and never leave a disabled button unexplained —
+  say what's still missing.
+- **Validate as the user leaves a field**, not after a round-trip submit; a reload-and-scroll-to-find-the-
+  error cycle is the lane-assist violation this file already rejects.
+- **Surface limits while they're still avoidable** — a live remaining-character count beats a silent
+  truncation discovered after submit.
+- **Don't ask for what's already known** — pre-fill from the authenticated session (email, name) rather
+  than making the user re-type it.
+- **Make requirements visible while they're being met** — password/format rules check off live as the user
+  types, not only after a failed submit.
+- **Parse, don't reject** — accept phone numbers, dates, and similar fields in whatever punctuation the
+  user types and normalize server-side; formatting strictness is friction with no security value.
+
 ## Cognitive-load honesty
 
 - One control, one clear meaning. Never overload a single button/toggle to mean different things depending
