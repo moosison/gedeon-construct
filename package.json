@@ -1,0 +1,32 @@
+{
+  "name": "gedeon-construct",
+  "version": "1.0.0",
+  "description": "The Gedeon Construct — a Claude Code operating system for AI-assisted software development. Hyper-logical, rigorous, self-improving.",
+  "license": "MIT",
+  "author": {
+    "name": "moosison"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moosison/gedeon-construct"
+  },
+  "homepage": "https://github.com/moosison/gedeon-construct",
+  "keywords": [
+    "pi-package",
+    "skills",
+    "claude-code",
+    "pipeline",
+    "cynefin",
+    "architecture",
+    "platform-strategy",
+    "gedeon-construct",
+    "darwin",
+    "blackboard",
+    "self-improving"
+  ],
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  }
+}

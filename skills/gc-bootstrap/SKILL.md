@@ -86,7 +86,7 @@ Draft a brief with these sections:
 | --- | --- |
 | **Clear intent** — acceptance criteria or bounded scope | Proceed directly to scanning |
 | **Vague intent** — "improve X", "explore", missing scope | Ask 1-3 clarifying questions (one per turn). Write requirements to `docs/brainstorms/{slug}-requirements.md` when durable. |
-| **No direction** — "what should we build", "give me ideas" | Brainstorm ranked options first; let user pick, then define scope |
+| **No direction** — "what should we build", "give me ideas" | Invoke `/gc-brainstorm` directly, in the same turn — generate ranked options, let the user pick, then define scope and proceed to scanning |
 
 ### Step 3: Workspace Exploration
 

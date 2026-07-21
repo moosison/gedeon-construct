@@ -1,0 +1,19 @@
+{
+  "name": "gedeon-construct",
+  "description": "The Gedeon Construct — a Claude Code operating system. Architect rigour + GSD project lifecycle + Darwin self-improving intelligence. Fully self-contained, no MCP server required.",
+  "version": "1.0.0",
+  "author": {
+    "name": "moosison"
+  },
+  "homepage": "https://github.com/moosison/gedeon-construct",
+  "repository": "https://github.com/moosison/gedeon-construct",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "pipeline",
+    "cynefin",
+    "architecture",
+    "gedeon-construct",
+    "self-improving"
+  ]
+}

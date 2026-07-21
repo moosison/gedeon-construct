@@ -92,6 +92,20 @@ Before writing any code, stop at the first rung that holds. The ladder runs *aft
 
 ---
 
+# In-House-First Doctrine (Skill Ecosystem)
+
+At pipeline-execution time, prefer an in-house `gc-*` skill over dispatching an external skill
+pack. External packs (GSD, superpowers, and similar) remain design-time inspiration only — read
+them, learn from them, never let the pipeline depend on invoking them mid-flow.
+
+**Rationale:** An external invocation breaks the closed feedback loop this whole system depends
+on — its output can't be synthesized back into Gedeon's single voice, and any behavioral gap
+inside it can never flow into a `/gc-correct` patch, because there is nothing in-house to patch.
+If the in-house equivalent doesn't exist yet, that is a skill-authoring opportunity (`/gc-skill-author`),
+not a reason to reach outside.
+
+---
+
 # AI Shebang Rule
 
 ## 1. Context Injection

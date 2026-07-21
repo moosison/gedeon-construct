@@ -1,0 +1,116 @@
+{
+  "name": "gedeon-construct",
+  "description": "The Gedeon Construct — a Claude Code operating system for AI-assisted software development.",
+  "owner": {
+    "name": "moosison"
+  },
+  "plugins": [
+    {
+      "name": "gedeon-construct",
+      "description": "gc-* skills: 8-stage pipeline, project lifecycle, specialist modes, and self-improvement loop.",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "moosison"
+      },
+      "skills": [
+        {
+          "name": "gc-pipeline",
+          "description": "Overview of the Gedeon Construct pipeline — all stages, iteration rules, and hand-offs"
+        },
+        {
+          "name": "gc-bootstrap",
+          "description": "Stage 1: workspace scan and situational awareness brief"
+        },
+        {
+          "name": "gc-discuss",
+          "description": "Stage 1.5 (optional): requirements elicitation, writes CONTEXT.md"
+        },
+        {
+          "name": "gc-plan",
+          "description": "Stage 2: 3 parallel explorers → evidence merge → Cynefin-tagged plan"
+        },
+        {
+          "name": "gc-preflight",
+          "description": "Stage 3: parallel plan audit with pessimistic confidence score"
+        },
+        {
+          "name": "gc-execute",
+          "description": "Stage 4: wave-based parallel execution with closed-loop verification"
+        },
+        {
+          "name": "gc-review",
+          "description": "Stage 5: multi-reviewer code review panel, security mandatory"
+        },
+        {
+          "name": "gc-eop",
+          "description": "Stage 6 (terminal): extract learnings to memory, write session digest"
+        },
+        {
+          "name": "gc-resume",
+          "description": "Pipeline recovery: reads gc-pipeline.json + artifact ladder, builds Recovery Brief, dispatches to correct stage"
+        },
+        {
+          "name": "gc-new-project",
+          "description": "Initialize .construct/ tree for a new project"
+        },
+        {
+          "name": "gc-milestone",
+          "description": "Add a milestone to ROADMAP.md"
+        },
+        {
+          "name": "gc-progress",
+          "description": "Show project completion status from .construct/ files"
+        },
+        {
+          "name": "gc-ship",
+          "description": "Create a PR via gh pr create to ship completed work"
+        },
+        {
+          "name": "gc-cynefin",
+          "description": "Classify problems using Cynefin before solving"
+        },
+        {
+          "name": "gc-probe",
+          "description": "Replace assumptions with evidence — foundational behavior rule"
+        },
+        {
+          "name": "gc-platform-review",
+          "description": "Review platform designs against Hohpe Platform Strategy principles"
+        },
+        {
+          "name": "gc-uiux",
+          "description": "Activate UI/UX design + implementation mode (taste-aware, distinctive not templated)"
+        },
+        {
+          "name": "gc-uiux-review",
+          "description": "Visual/UX/taste audit of rendered interfaces (complements gc-review)"
+        },
+        {
+          "name": "gc-shebang",
+          "description": "Generate or update @ai-rules headers at the top of code files"
+        },
+        {
+          "name": "gc-debug",
+          "description": "Scientific debugging: hypothesis → probe → fix → verify"
+        },
+        {
+          "name": "gc-skill-author",
+          "description": "Write or amend gc-* skills using Darwin HOW-not-WHAT principles"
+        },
+        {
+          "name": "gc-note",
+          "description": "Append a quick note or idea to .construct/NOTES.md"
+        },
+        {
+          "name": "gc-branch",
+          "description": "GitHub branching strategy advisor — detects team size and prescribes solo/small-team/full-team model"
+        },
+        {
+          "name": "gc-correct",
+          "description": "End-of-session behavioral gap capture and skill patching"
+        }
+      ]
+    }
+  ]
+}

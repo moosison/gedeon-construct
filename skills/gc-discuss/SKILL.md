@@ -20,6 +20,10 @@ model: sonnet
 **Prior stage:** `/gc-bootstrap`
 **Next stage:** `/gc-plan`
 
+This skill is convergent and assumes a phase already exists (see the First-run guard in Step 1
+below); if no phase or scope exists yet, `/gc-brainstorm` is the divergent, pre-phase-existence
+counterpart that runs first.
+
 ## When to Use
 
 Invoke `/gc-discuss` when:
