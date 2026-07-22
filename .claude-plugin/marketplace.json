@@ -113,6 +113,10 @@
         {
           "name": "gc-update",
           "description": "Update an existing install to the latest published version"
+        },
+        {
+          "name": "gc-contribute",
+          "description": "Files a GitHub Issue against the public repo for a raw idea or a locally-proven gc-correct patch"
         }
       ]
     }

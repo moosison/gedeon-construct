@@ -69,7 +69,7 @@ Existing installs update in place with `/gc-update` -- it pulls the latest from 
 
 ## Skills
 
-The Construct ships 31 skills, invoked as `/gc-*` slash commands.
+The Construct ships 32 skills, invoked as `/gc-*` slash commands.
 
 ### Pipeline -- 6-stage workflow + entry points
 
@@ -119,6 +119,7 @@ The Construct ships 31 skills, invoked as `/gc-*` slash commands.
 |-------------------|--------------------------------------------------------------------|
 | `gc-skill-author` | Write or amend gc-* skills (HOW not WHAT, no tool names in bodies) |
 | `gc-correct`      | End-of-session behavioral gap capture -> minimal skill patches     |
+| `gc-contribute`   | Files a GitHub Issue for a raw idea or a locally-proven patch      |
 
 ### Setup
 

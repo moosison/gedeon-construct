@@ -4,6 +4,7 @@ description: "End-of-session behavioral gap capture. Scans the session for recur
 phase: capture
 requires:
   - gc-skill-author
+  - gc-contribute
 tags: [self-improvement, corrective-memory, behavioral-gap, meta]
 ---
 
@@ -26,7 +27,13 @@ tags: [self-improvement, corrective-memory, behavioral-gap, meta]
 //    code review, 2026-07-22).
 // 7. [Constraint]: Step 3.5's `write` call MUST use a quoted-delimiter heredoc (`<<'EOF'`) — the
 //    piped `description` text is LLM-drafted and an unquoted heredoc would let the shell expand any
-//    `$(...)`/backtick sequence embedded in it before it reaches stdin.
+//    `$(...)`/backtick sequence embedded in it before it reaches stdin. The delimiter itself MUST
+//    also be distinctive rather than the generic `EOF`, with a standalone-line pre-check that the
+//    piped content doesn't already contain a line matching it — a generic delimiter can be defeated
+//    by content containing a lone matching line, terminating the heredoc early and reopening raw
+//    shell interpretation of whatever follows.
+// 8. [Pattern]: Step 5.5 shares the Closing section's caller-context phrase check to decide whether
+//    to pause and offer an upstream-share handoff, so it never fires mid gc-eop close-out.
 
 # Correct (Corrective Memory)
 
@@ -109,6 +116,7 @@ Before presenting any draft patch for approval, check whether it should be HELD 
    - **Disclosed limitation (accepted for v1, found at round 5 preflight — Auditors A and C, independently convergent):** a gap whose description repeatedly resembles two or more pre-existing, distinct entries can never auto-promote. Each recurrence re-triggers the ambiguous-match bullet above (rather than incrementing one specific entry), spawning a fresh entry instead — and since the newly-spawned entry is itself now part of the resembling cluster, the NEXT recurrence is likely to be judged ambiguous again too, indefinitely. This is the mirror image of the false-promotion risk the ambiguous-match rule exists to prevent, traded deliberately: silent non-promotion (visible via the "also resembles" note on every occurrence, and via the growing held-entry count in gc-eop's summary line) is accepted as the safer failure direction over false promotion from an incorrect merge. The only resolution path in v1 is the user manually consolidating the resembling entries by hand (there is no dedicated CLI operation for this — `pending-corrections-cli.js` exposes only `list`/`write`; a manual consolidation is a hand-authored `write` call replacing the cluster with one merged entry).
 3. **If one or more patches were marked PROMOTED in item 2:** proceed to Step 4 (Present for Approval) for those patches only. For each promoted patch: if approved and successfully applied (Step 5), remove its corresponding entry from the in-memory snapshot entirely — its durable record now lives in Step 6's global-memory write. If the user chooses Skip **or** Revise instead (Step 4's three outcomes are Yes/Skip/Revise; only a successful Apply removes the entry): leave its entry in the snapshot unchanged, still at its promoted count — the underlying gap genuinely recurred, it just wasn't durably applied this pass; it will be offered again on a future run.
 4. **Write the in-memory snapshot back exactly once per pass** — immediately, if item 2 marked nothing PROMOTED (skip Steps 4 through 7 entirely for this run, proceeding directly to the Closing step and reporting each held candidate's current count there); otherwise, after item 3's Step 4/5 outcomes have resolved for every promoted patch. Either way: run `node hooks/lib/pending-corrections-cli.js write` via Bash, piping the entire array as JSON on stdin via a **quoted-delimiter heredoc** (e.g. `<<'EOF'`, never the unquoted `<<EOF` form) — never `echo`, and never as a `--scope`-style shell argument. The quoted delimiter matters specifically here: `description` text is LLM-drafted from session-transcript content, and an unquoted heredoc still lets the shell expand any `$(...)` or backtick sequence embedded in that text before it reaches stdin — the exact class of injection the heredoc was chosen to prevent in the first place. The in-memory "touched this pass" marker set from item 2 is bookkeeping local to this pass only, tracked separately from the entry objects themselves — never include it in the JSON written here (each entry written must have exactly its 5 schema fields).
+   - **The delimiter itself must also be distinctive, non-generic** (never the literal `EOF`), with a standalone-line pre-check that the piped `description` content contains no line matching it before writing: a heredoc terminates on any standalone line matching its own delimiter, so a generic `EOF` delimiter can be defeated by LLM-drafted content that happens to contain a lone `EOF` line, ending the heredoc early and reopening raw shell interpretation of everything after it.
    - **If this write fails** (non-zero exit code): surface a visible warning — "⚠ Failed to persist pending-corrections state this session — held/promoted counts from this run may not be saved." — do not silently proceed as if it succeeded. If this failure happens after a promoted patch was already applied in Step 5, the stale entry may be offered again on a future run — self-healing on the next successful write, not a permanent inconsistency.
    - **If the write succeeds but produced any stderr output** (the CLI's per-entry validation warnings — a stripped stray key, or a dropped malformed entry): surface that stderr text too, as a visible note — a successful write can still have quietly stripped or discarded something, and that signal must not go unseen.
 
@@ -123,9 +131,15 @@ Show every draft patch that Step 3.5 did not hold to the user. For each:
 For each approved patch:
 1. Read the current skill file
 2. Apply the minimal addition (do not rewrite working content)
-3. Confirm the patch was written
+3. Confirm the patch was written — if the write itself fails, report it as a blocker for that patch and do not treat it as applied; it stays at its promoted count for a future run, same as a Skip or Revise outcome
 
 A corrective patch may target skill-file prose, a hook definition, or a script under `hooks/`/`hooks/lib/` when the recurring gap is a mechanical omission (a missing check, a missing field write, a silent fallback) rather than a judgment gap — propose the smallest hook/script diff that would have caught the mistake automatically, in the same approval flow already used for prose patches. Every hook/script patch gc-correct proposes must be presented as a diff against the current file with the specific failure it would have caught named inline, and requires the same explicit user approval as a prose patch before being applied — gc-correct never applies its own patches, mechanical or otherwise.
+
+### Step 5.5: Offer to Share Upstream (optional)
+
+**Skip this step entirely** if the immediately-preceding caller context contains the phrase 'invoked from inside gc-eop's closing sequence' — the same trigger phrase the Closing section below already checks. This step is a confirmation-gated pause; gc-eop's close-out flow must continue uninterrupted per the Closing section's own contract, so this offer never fires mid-close-out. (Step 3.5 item 4's existing "skip Steps 4 through 7" wording, for the case where nothing was promoted this pass, already correctly covers this new step too — 5.5 is only reachable after Step 5, which that branch skips.)
+
+**Otherwise** (standalone invocation): for EACH patch approved and applied in Step 5, in turn, ask the user whether to share it upstream to the public repo — one independent yes/no per patch. On yes for a given patch, hand off to the gc-contribute skill with that patch's identifier (the affected skill's name, or the affected file's relative path for a non-skill target — per gc-contribute's own Step 1 resolution rule) and its full payload (Gap identified/Root cause/Proposed addition for a prose patch, or the diff + specific-failure description for a hook/script patch). Regardless of gc-contribute's own outcome for that patch — filed successfully, declined by the user, or degraded gracefully because `gh` was unavailable — control always returns here to ask about the next approved patch, if any. Only once every approved patch from this pass has been asked about (regardless of individual answers) does the flow continue to Step 6, unchanged.
 
 ### Step 6: Write to Global Memory
 
