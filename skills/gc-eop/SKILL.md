@@ -29,6 +29,11 @@ model: sonnet
 //    (e.g. an advisory/consult session, or work spanning multiple milestones).
 // 11. [Pattern]: Step 2 deletes .construct/pipelines/{slug}.json after the digest write (slug-validated per gc-plan's canonical definition; this slug only; skip silently if absent).
 // 12. [Pattern]: Commit and Push item 2 (wip-pause reconciliation) runs before item 3's uncommitted-changes branch, unconditionally, using the literal marker "wip(pause):" — a parked branch has a clean tree and would otherwise skip both item 3 and item 7's "no uncommitted changes: skip silently" straight past an un-reconciled wip(pause) commit.
+// 13. [Pattern]: The final pipeline-complete line reads hooks/lib/pending-corrections-cli.js's
+//    `list` output fresh at that point (after gc-correct has already run this close-out) and reports
+//    it — never earlier in Step 2's digest, which would be stale by the time gc-correct mutates the
+//    store. Gated on .construct/ existing; a `list` failure renders identically to "none held" rather
+//    than surfacing an error, since this mechanism only exists in the gedeon-construct repo itself.
 
 # End of Pipeline (EOP)
 
@@ -297,7 +302,7 @@ After the behavioral gap gate resolves (gc-correct complete or skipped), handle 
 
 7. If no uncommitted changes: skip silently.
 
-Signal pipeline complete in Gedeon voice — name the digest path, confirm the commit hash and branch pushed (or local/no-repo status), and ask if anything remains before closing.
+Signal pipeline complete in Gedeon voice — name the digest path, confirm the commit hash and branch pushed (or local/no-repo status), report the current pending-corrections state if `.construct/` exists in this project (a fresh read at this point, after gc-correct has already run and mutated it this close-out — run `node hooks/lib/pending-corrections-cli.js list` via Bash; render "Pending corrections: none held." if the result is empty OR the command fails for any reason — e.g. this mechanism's CLI not being present in a project other than gedeon-construct — else "Pending corrections: {N} held — {slug} ({count}/2)[, {slug} ({count}/2), ...]"; omit this clause entirely if `.construct/` does not exist), and ask if anything remains before closing.
 
 ## Anti-Patterns
 
