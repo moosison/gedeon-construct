@@ -6,6 +6,7 @@
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
+const { atomicWrite } = require('./hooks/lib/atomic-write');
 
 const ROOT       = __dirname;
 const HOME       = os.homedir();
@@ -105,8 +106,6 @@ for (const dir of ['user', 'projects', 'plans'].map(d => path.join(GC_HOME, d)))
   fs.mkdirSync(dir, { recursive: true });
 }
 const seeds = [
-  { file: path.join(GC_HOME, 'config.json'),
-    content: JSON.stringify({ version: '1.0.0', installedAt: new Date().toISOString(), packagePath: ROOT }, null, 2) + '\n' },
   { file: path.join(GC_HOME, 'user', 'memory.md'),
     content: '# User Preferences\n<!-- gc-eop and gc-correct append here. gc-bootstrap reads this. -->\n' },
   { file: path.join(GC_HOME, 'projects', 'index.json'), content: '[]\n' },
@@ -114,6 +113,23 @@ const seeds = [
 for (const s of seeds) {
   if (!fs.existsSync(s.file)) fs.writeFileSync(s.file, s.content, 'utf8');
 }
+
+// config.json is refreshed on every run (read-merge-write), not write-once-if-absent:
+// packagePath/version must stay current across a `git pull` + re-run, while installedAt
+// and any fields a later /gc-update run persists (e.g. lastUpdateCheckAt) survive.
+const configFile = path.join(GC_HOME, 'config.json');
+let existingConfig = {};
+if (fs.existsSync(configFile)) {
+  try { existingConfig = JSON.parse(fs.readFileSync(configFile, 'utf8')); } catch (_) { existingConfig = {}; }
+}
+const { version } = require('./package.json');
+const configContent = JSON.stringify({
+  ...existingConfig,
+  installedAt: existingConfig.installedAt || new Date().toISOString(),
+  packagePath: ROOT,
+  version,
+}, null, 2) + '\n';
+atomicWrite(configFile, configContent);
 
 // ── 5. Report ─────────────────────────────────────────────────────────────────
 const skillCount = fs.existsSync(skillsSrc)

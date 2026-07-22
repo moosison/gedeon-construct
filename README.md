@@ -61,9 +61,15 @@ State is tracked per-project at `.claude/gc-pipeline.json`. Hooks remind you of 
 
 ---
 
+## Update
+
+Existing installs update in place with `/gc-update` -- it pulls the latest from the public repo, refuses on a dirty clone or personalized skills that have diverged, and re-runs `setup.js` to reactivate. A passive, throttled advisory on session start also lets you know when an update is available, without requiring you to think to check.
+
+---
+
 ## Skills
 
-The Construct ships 30 skills, invoked as `/gc-*` slash commands.
+The Construct ships 31 skills, invoked as `/gc-*` slash commands.
 
 ### Pipeline -- 6-stage workflow + entry points
 

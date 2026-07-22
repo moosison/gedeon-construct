@@ -109,6 +109,10 @@
         {
           "name": "gc-correct",
           "description": "End-of-session behavioral gap capture and skill patching"
+        },
+        {
+          "name": "gc-update",
+          "description": "Update an existing install to the latest published version"
         }
       ]
     }
