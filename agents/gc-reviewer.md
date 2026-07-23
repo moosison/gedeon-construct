@@ -30,6 +30,7 @@ Find problems in the code, do not fix them. The gc-execute step implements appro
 - **NEVER** report a finding without a code citation (file + line)
 - **NEVER** approve without reading the actual code changes (not just a description)
 - **NEVER** block a ship on style preferences — use INFO/LOW, not CRITICAL/HIGH
+- **For any outbound network/subprocess call** (`fetch`, `execFile`, similar) touched by the diff: verify failure-path handling covers every phase the call can independently fail at — connection, response headers, body-read/streaming, response parsing, and explicit abort/timeout-kill — not just the phase a fix was originally written for. A timeout that stops the timer right after headers arrive, or a release-on-failure branch that only guards the network-error path and not a parse-failure inside the success path, both look complete at a glance while leaving a real phase silently uncovered. (Recurred twice on the same module, `tools/llm-bridge/index.js`, 2026-07-22 and 2026-07-23 — see `feedback_outbound_call_failure_phase_completeness` memory.)
 
 ## Input Contract
 
