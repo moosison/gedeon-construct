@@ -4,7 +4,6 @@ description: "End-of-session behavioral gap capture. Scans the session for recur
 phase: capture
 requires:
   - gc-skill-author
-  - gc-contribute
 tags: [self-improvement, corrective-memory, behavioral-gap, meta]
 ---
 
@@ -137,7 +136,9 @@ A corrective patch may target skill-file prose, a hook definition, or a script u
 
 ### Step 5.5: Offer to Share Upstream (optional)
 
-**Skip this step entirely** if the immediately-preceding caller context contains the phrase 'invoked from inside gc-eop's closing sequence' — the same trigger phrase the Closing section below already checks. This step is a confirmation-gated pause; gc-eop's close-out flow must continue uninterrupted per the Closing section's own contract, so this offer never fires mid-close-out. (Step 3.5 item 4's existing "skip Steps 4 through 7" wording, for the case where nothing was promoted this pass, already correctly covers this new step too — 5.5 is only reachable after Step 5, which that branch skips.)
+**Skip this step entirely, no prompt**, if either:
+- the immediately-preceding caller context contains the phrase 'invoked from inside gc-eop's closing sequence' — the same trigger phrase the Closing section below already checks. gc-eop's close-out flow must continue uninterrupted per the Closing section's own contract, so this offer never fires mid-close-out.
+- **or** the user's local preferences (`~/.claude/gedeon/user/memory.md`, loaded at session start) record a standing opt-out from upstream-sharing prompts. This is a per-install preference, not skill behavior — it lives outside the publishable surface entirely, so it applies only on installs where the user set it and never propagates to another user's install through a sync of this file. Absent such a preference, this step is enabled by default — every install starts with Step 5.5 active.
 
 **Otherwise** (standalone invocation): for EACH patch approved and applied in Step 5, in turn, ask the user whether to share it upstream to the public repo — one independent yes/no per patch. On yes for a given patch, hand off to the gc-contribute skill with that patch's identifier (the affected skill's name, or the affected file's relative path for a non-skill target — per gc-contribute's own Step 1 resolution rule) and its full payload (Gap identified/Root cause/Proposed addition for a prose patch, or the diff + specific-failure description for a hook/script patch). Regardless of gc-contribute's own outcome for that patch — filed successfully, declined by the user, or degraded gracefully because `gh` was unavailable — control always returns here to ask about the next approved patch, if any. Only once every approved patch from this pass has been asked about (regardless of individual answers) does the flow continue to Step 6, unchanged.
 
