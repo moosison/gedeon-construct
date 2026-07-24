@@ -39,7 +39,28 @@ if (fs.existsSync(agentsSrc)) {
   }
 }
 
-// ── 3. Merge hooks into ~/.claude/settings.json ───────────────────────────────
+// ── 3. Copy tools ────────────────────────────────────────────────────────────
+// filter excludes dotfiles (e.g. tools/llm-bridge/.quota-state.json, a gitignored, dev-local
+// runtime-generated file with real quota data — round 1 preflight finding, 2026-07-24: the
+// unfiltered recursive copy would leak it into every global install) — source code never
+// starts with '.', so this is a safe, future-proof exclusion, not a name-specific one-off.
+const toolsSrc  = path.join(ROOT, 'tools');
+const toolsDest = path.join(CLAUDE_DIR, 'tools');
+if (fs.existsSync(toolsSrc)) {
+  fs.mkdirSync(toolsDest, { recursive: true });
+  for (const entry of fs.readdirSync(toolsSrc)) {
+    const src  = path.join(toolsSrc, entry);
+    const dest = path.join(toolsDest, entry);
+    if (fs.statSync(src).isDirectory()) {
+      fs.cpSync(src, dest, {
+        recursive: true,
+        filter: (srcPath) => !path.basename(srcPath).startsWith('.'),
+      });
+    }
+  }
+}
+
+// ── 4. Merge hooks into ~/.claude/settings.json ───────────────────────────────
 // Each hook group is tagged with "id": "gedeon-construct" as a marker.
 // On reinstall: entries with that id are replaced. Other hooks are untouched.
 const HOOK_ID = 'gedeon-construct';
@@ -101,7 +122,7 @@ for (const p of gcPerms) {
 fs.mkdirSync(CLAUDE_DIR, { recursive: true });
 fs.writeFileSync(globalSettings, JSON.stringify(existing, null, 2) + '\n');
 
-// ── 4. Seed ~/.claude/gedeon/ home tree ───────────────────────────────────────
+// ── 5. Seed ~/.claude/gedeon/ home tree ───────────────────────────────────────
 for (const dir of ['user', 'projects', 'plans'].map(d => path.join(GC_HOME, d))) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -131,17 +152,20 @@ const configContent = JSON.stringify({
 }, null, 2) + '\n';
 atomicWrite(configFile, configContent);
 
-// ── 5. Report ─────────────────────────────────────────────────────────────────
+// ── 6. Report ─────────────────────────────────────────────────────────────────
 const skillCount = fs.existsSync(skillsSrc)
   ? fs.readdirSync(skillsSrc).filter(e => fs.statSync(path.join(skillsSrc, e)).isDirectory()).length : 0;
 const agentCount = fs.existsSync(agentsSrc)
   ? fs.readdirSync(agentsSrc).filter(e => e.endsWith('.md')).length : 0;
+const toolsCount = fs.existsSync(toolsSrc)
+  ? fs.readdirSync(toolsSrc).filter(e => fs.statSync(path.join(toolsSrc, e)).isDirectory()).length : 0;
 const hookCount  = Object.values(gcHooks).reduce((n, arr) => n + arr.length, 0);
 
 console.log('');
 console.log('The Gedeon Construct -- installation complete.');
 console.log(`  Skills:      ${String(skillCount).padStart(2)}  ->  ${tilde(skillsDest)}`);
 console.log(`  Agents:      ${String(agentCount).padStart(2)}  ->  ${tilde(agentsDest)}`);
+console.log(`  Tools:       ${String(toolsCount).padStart(2)}  ->  ${tilde(toolsDest)}`);
 console.log(`  Hooks:       ${String(hookCount).padStart(2)}  ->  ${tilde(globalSettings)}`);
 console.log(`  Permissions: ${String(gcPerms.length).padStart(2)}  ->  ${tilde(globalSettings)} (gc-* skills + gedeon home)`);
 console.log(`  Gedeon home:      ${tilde(GC_HOME)}`);

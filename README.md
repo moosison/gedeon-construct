@@ -20,7 +20,7 @@ No MCP server required. All logic is inline in skill files.
 # 1. Clone
 git clone https://github.com/moosison/gedeon-construct.git ~/gedeon-construct
 
-# 2. Run setup (copies skills + agents, merges hooks and scoped permission
+# 2. Run setup (copies skills + agents + tools, merges hooks and scoped permission
 #    allow-rules into ~/.claude/settings.json, seeds ~/.claude/gedeon/)
 node ~/gedeon-construct/setup.js
 
